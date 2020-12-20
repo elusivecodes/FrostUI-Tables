@@ -33,8 +33,33 @@ class Table extends UI.BaseComponent {
             this._getDataInit();
         }
 
-        // this._render();
-        // this._events();
+        this._headings = this.constructor._getHeadingsFromDOM(this._node);
+
+        this._columns = [];
+
+        if (this._settings.columns) {
+            this._columns = this._settings.columns;
+        } else {
+            this._columns = new Array(this._headings.length).fill();
+        }
+
+        this._columns = this._columns.map(column => ({
+            key: null,
+            orderData: null,
+            orderable: true,
+            searchable: true,
+            ...column
+        }));
+
+        this._offset = 0;
+        this._limit = this._settings.length;
+        this._order = this._settings.order.slice();
+        this._filter = null;
+
+        this._render();
+        this._events();
+
+        this._getData();
     }
 
     /**

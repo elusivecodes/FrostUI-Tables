@@ -8,15 +8,15 @@ Object.assign(Table.prototype, {
      * Initialize preloaded get data.
      */
     _getDataInit() {
-        this._getData = ({ filter, limit, offset, order }) => {
+        this._getData = _ => {
 
             let results = this._data;
 
-            if (filter) {
-                const escapedFilter = Core.escapeRegExp(filter);
+            if (this._filter) {
+                const escapedFilter = Core.escapeRegExp(this._filter);
                 const regExp = new RegExp(escapedFilter, 'i');
 
-                const normalized = filter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const normalized = this._filter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 const escapedNormal = Core.escapeRegExp(normalized);
                 const regExpNormal = new RegExp(escapedNormal, 'i');
 
@@ -38,7 +38,7 @@ Object.assign(Table.prototype, {
 
             // order
             results = results.sort((a, b) => {
-                for (const [index, direction] of order) {
+                for (const [index, direction] of this._order) {
                     const aLower = a[index].toLowerCase();
                     const bLower = b[index].toLowerCase();
                     const diff = aLower.localeCompare(bLower);
@@ -59,7 +59,7 @@ Object.assign(Table.prototype, {
 
             this._renderResults({
                 filtered: results.length,
-                results: results.slice(offset, offset + limit),
+                results: results.slice(this._offset, this._offset + this._limit),
                 total: this._data.length
             });
         };
@@ -69,7 +69,7 @@ Object.assign(Table.prototype, {
      * Initialize get data from callback.
      */
     _getResultsInit() {
-        this._getData = options => {
+        this._getData = _ => {
 
             // cancel last request
             if (this._request && this._request.cancel) {
@@ -78,7 +78,12 @@ Object.assign(Table.prototype, {
             }
 
             // render loading
-            const request = this._getResults({ offset, term });
+            const request = this._getResults({
+                filter: this._filter,
+                offset: this._offset,
+                limit: this._limit,
+                order: this._order
+            });
 
             request.then(response => {
                 this._renderResults(response);
