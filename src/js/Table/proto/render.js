@@ -38,8 +38,23 @@ Object.assign(Table.prototype, {
         this._postCol2 = dom.create('div');
         dom.append(postRow, this._postCol2);
 
-        this._renderSearch();
-        this._renderLengthSelect();
+        const pageContainer = dom.create('div', {
+            class: 'd-flex'
+        });
+        dom.append(this._postCol2, pageContainer);
+
+        this._pagination = dom.create('div', {
+            class: 'pagination pagination-sm mx-auto me-sm-0'
+        });
+        dom.append(pageContainer, this._pagination);
+
+        if (this._settings.searching) {
+            this._renderSearch();
+        }
+
+        if (this._settings.lengthChange) {
+            this._renderLengthSelect();
+        }
 
         dom.append(this._container, preRow);
         dom.append(this._container, this._node);
@@ -52,46 +67,37 @@ Object.assign(Table.prototype, {
         const row = dom.create('tr');
 
         for (const [index, heading] of this._headings.entries()) {
-            const cell = dom.create('th');
-            dom.append(row, cell);
-
-            const container = dom.create('div', {
-                class: 'd-flex justify-content-between'
-            });
-            dom.append(cell, container);
-
-            const title = dom.create('div', {
-                class: 'fw-bold',
+            const cell = dom.create('th', {
+                class: 'table-heading',
                 html: heading
             });
-            dom.append(container, title);
+            dom.append(row, cell);
 
-            if (!this._columns[index].orderable) {
+            if (!this._settings.ordering || !this._columns[index].orderable) {
                 continue;
             }
 
-            dom.setStyle(cell, 'cursor', 'pointer');
-
-            let icon = 'icon-sort';
+            let sortClass = 'table-sort';
             for (const order of this._order) {
                 if (order[0] != index) {
                     continue;
                 }
 
                 if (order[1] == 'asc') {
-                    icon = 'icon-sort-asc';
+                    sortClass += ' table-sort-asc';
                 } else {
-                    icon = 'icon-sort-desc';
+                    sortClass += ' table-sort-desc';
                 }
             }
 
-            const sort = dom.create('span', {
-                class: `${icon} align-self-center`
-            });
-            dom.append(container, sort);
+            dom.addClass(cell, sortClass);
         }
 
         dom.append(this._thead, row);
+
+        if (this._settings.headerCallback) {
+            this._settings.headerCallback(this._head, this._data, this._offset, this._offset + this._limit);
+        }
     },
 
     _renderInfo(data) {
@@ -103,12 +109,20 @@ Object.assign(Table.prototype, {
 
         const start = this._offset + 1;
         const end = this._offset + data.results.length;
+        let infoText = `Showing results ${start} to ${end} of ${data.filtered}.`;
+
+        if (this._settings.infoCallback) {
+            infoText = this._settings.infoCallback(start, end, data.total, data.filtered, text);
+        }
+
         const text = dom.create('small', {
-            text: `Showing results ${start} to ${end} of ${data.filtered}.`
+            text: infoText
         });
         dom.append(container, text);
 
         dom.append(this._postCol1, container);
+
+
     },
 
     _renderLengthSelect() {
@@ -147,7 +161,7 @@ Object.assign(Table.prototype, {
                 text: length
             });
 
-            if (length == this._length) {
+            if (length == this._limit) {
                 dom.setAttribute(option, 'checked', true);
             }
 
@@ -173,8 +187,11 @@ Object.assign(Table.prototype, {
             class: 'page-item'
         });
 
-        const link = dom.create('a', {
-            class: 'page-link ripple'
+        const link = dom.create('button', {
+            class: 'page-link ripple',
+            attributes: {
+                type: 'button'
+            }
         });
         dom.append(container, link);
 
@@ -197,6 +214,10 @@ Object.assign(Table.prototype, {
             dom.setText(link, options.page);
         }
 
+        if (options.page) {
+            dom.setDataset(link, 'page', options.page);
+        }
+
         return container;
     },
 
@@ -204,29 +225,26 @@ Object.assign(Table.prototype, {
         const totalPages = Math.ceil(data.filtered / this._limit);
         const page = 1 + (this._offset / this._limit);
 
-        dom.empty(this._postCol2);
-
-        const container = dom.create('div', {
-            class: 'd-flex'
-        });
-
-        this._pagination = dom.create('div', {
-            class: 'pagination pagination-sm mx-auto me-sm-0'
-        });
-        dom.append(container, this._pagination);
+        dom.empty(this._pagination);
 
         const prev = this._renderPageItem({
             icon: 'icon-arrow-left',
-            disabled: page == 1
+            disabled: page == 1,
+            page: page > 1 ?
+                page - 1 :
+                null
         });
         dom.append(this._pagination, prev);
 
         let startPage = Math.max(page - 5, 1);
         let endPage = Math.min(page + 5, totalPages);
 
-        while (endPage - startPage > 5) {
-            startPage++;
-            endPage--;
+        while (endPage - startPage > 4) {
+            if (page - startPage > endPage - page) {
+                startPage++;
+            } else {
+                endPage--;
+            }
         }
 
         for (let current = startPage; current <= endPage; current++) {
@@ -239,27 +257,51 @@ Object.assign(Table.prototype, {
 
         const next = this._renderPageItem({
             icon: 'icon-arrow-right',
-            disabled: page == totalPages
+            disabled: page == totalPages,
+            page: page < totalPages ?
+                page + 1 :
+                null
         });
         dom.append(this._pagination, next);
-
-        dom.append(this._postCol2, container);
     },
 
     _renderResults(data) {
         dom.empty(this._tbody);
 
         this._renderHeadings();
-        this._renderPagination(data);
-        this._renderInfo(data);
 
-        for (const result of data.results) {
+        if (this._settings.paging) {
+            this._renderPagination(data);
+        }
+
+        if (this._settings.info) {
+            this._renderInfo(data);
+        }
+
+        for (const [index, result] of data.results.entries()) {
             const row = this._renderRow(result);
+
+            if (this._settings.rowCallback) {
+                this._settings.rowCallback(row, result, index, this._offset + index);
+            }
+
             dom.append(this._tbody, row);
+
+            if (this._settings.createdRow) {
+                this._settings.createdRow(row, result, index);
+            }
+        }
+
+        if (this._settings.drawCallback) {
+            this._settings.drawCallback();
+        }
+
+        if (this._settings.footerCallback) {
+            this._settings.footerCallback(this._tfoot, this._data, this._offset, this._offset + this._limit);
         }
     },
 
-    _renderRow(data, n, i) {
+    _renderRow(data) {
         const row = dom.create('tr');
 
         for (const [index, column] of this._columns.entries()) {

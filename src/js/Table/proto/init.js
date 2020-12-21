@@ -10,58 +10,55 @@ Object.assign(Table.prototype, {
     _getDataInit() {
         this._getData = _ => {
 
-            let results = this._data;
+            const total = this._data.length;
+            let filtered = total;
 
-            if (this._filter) {
-                const escapedFilter = Core.escapeRegExp(this._filter);
+            let rowIndexes = null;
+
+            if (this._term) {
+                rowIndexes = [];
+
+                const escapedFilter = Core.escapeRegExp(this._term);
                 const regExp = new RegExp(escapedFilter, 'i');
 
-                const normalized = this._filter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const normalized = this._term.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 const escapedNormal = Core.escapeRegExp(normalized);
                 const regExpNormal = new RegExp(escapedNormal, 'i');
 
                 // filter results
-                results = results.filter(item => {
+                for (const [rowIndex, result] of this._data.entries()) {
                     for (const [index, column] of this._columns.entries()) {
                         if (!column.searchable) {
                             continue;
                         }
 
-                        if (regExp.test(item[index]) || regExpNormal.test(item[index])) {
-                            return true;
+                        const key = column.key || index;
+
+                        if (regExp.test(result[key]) || regExpNormal.test(result[key])) {
+                            rowIndexes.push(rowIndex);
                         }
                     }
+                }
 
-                    return false;
-                });
+                filtered = rowIndexes.length;
             }
 
             // order
-            results = results.sort((a, b) => {
-                for (const [index, direction] of this._order) {
-                    const aLower = a[index].toLowerCase();
-                    const bLower = b[index].toLowerCase();
-                    const diff = aLower.localeCompare(bLower);
+            if (this._settings.ordering) {
+                rowIndexes = this._getOrderedIndexes(rowIndexes);
+            }
 
-                    if (!diff) {
-                        continue;
-                    }
+            let results = [];
 
-                    if (direction.toLowerCase() === 'desc') {
-                        diff *= -1;
-                    }
-
-                    return diff;
+            if (rowIndexes) {
+                for (const rowIndex of rowIndexes) {
+                    results.push(this._data[rowIndex]);
                 }
+            } else {
+                results = this._data.slice(this._offset, this._offset + this._limit);
+            }
 
-                return 0;
-            });
-
-            this._renderResults({
-                filtered: results.length,
-                results: results.slice(this._offset, this._offset + this._limit),
-                total: this._data.length
-            });
+            this._renderResults({ filtered, results, total });
         };
     },
 
@@ -77,13 +74,23 @@ Object.assign(Table.prototype, {
                 this._request = null;
             }
 
+            const options = {};
+
+            if (this._term) {
+                options.term = this._term;
+            }
+
+            if (this._settings.ordering) {
+                options.order = this._order;
+            }
+
+            if (this._settings.paging) {
+                options.offset = this._offset;
+                options.limit = this._limit;
+            }
+
             // render loading
-            const request = this._getResults({
-                filter: this._filter,
-                offset: this._offset,
-                limit: this._limit,
-                order: this._order
-            });
+            const request = this._getResults(options);
 
             request.then(response => {
                 this._renderResults(response);

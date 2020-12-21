@@ -74,6 +74,7 @@
             }
 
             this._columns = this._columns.map(column => ({
+                dir: 'asc',
                 key: null,
                 orderData: null,
                 orderable: true,
@@ -84,8 +85,11 @@
             this._offset = 0;
             this._limit = this._settings.length;
             this._order = this._settings.order.slice();
-            this._filter = null;
+            this._term = null;
 
+            if (this._data) {
+                this._buildIndex();
+            }
             this._render();
             this._events();
 
@@ -109,37 +113,179 @@
     Object.assign(Table.prototype, {
 
         _events() {
-            dom.addEvent(this._lengthSelect, 'change', e => {
-                const value = dom.getValue(e.currentTarget);
-                this._limit = value;
-                this._getData();
-            });
+            if (this._settings.lengthChange) {
+                dom.addEvent(this._lengthSelect, 'change', e => {
+                    const value = dom.getValue(e.currentTarget);
+                    this._limit = value;
+                    this._getData();
+                });
+            }
 
-            dom.addEvent(this._searchInput, 'input', e => {
-                this._filter = dom.getValue(e.currentTarget);
-                this._getData();
-            });
+            if (this._settings.searching) {
+                dom.addEvent(this._searchInput, 'input', e => {
+                    this._term = dom.getValue(e.currentTarget);
+                    this._getData();
+                });
+            }
 
-            dom.addEventDelegate(this._thead, 'click', 'th', e => {
-                const index = dom.index(e.currentTarget);
+            if (this._settings.ordering) {
+                dom.addEventDelegate(this._thead, 'click', 'th', e => {
+                    e.preventDefault();
 
-                if (!this._columns[index].orderable) {
-                    return;
+                    const index = dom.index(e.currentTarget);
+
+                    if (!this._columns[index].orderable) {
+                        return;
+                    }
+
+                    const defaultDir = this._columns[index].dir;
+                    let currentDir = null;
+
+                    for (const [col, dir] of this._order) {
+                        if (col != index) {
+                            continue;
+                        }
+
+                        currentDir = dir;
+                        break;
+                    }
+
+                    let nextDir = defaultDir;
+                    if (currentDir === defaultDir) {
+                        nextDir = defaultDir === 'asc' ?
+                            'desc' :
+                            'asc';
+                    }
+
+                    if (e.shiftKey) {
+                        if (!currentDir) {
+                            this._order.push([index, nextDir]);
+                        } else if (currentDir === defaultDir) {
+                            this._order = this._order.map(([col, dir]) => {
+                                if (col == index) {
+                                    dir = nextDir;
+                                }
+
+                                return [col, dir];
+                            });
+                        } else {
+                            this._order = this._order.filter(([col]) => {
+                                return col != index;
+                            });
+                        }
+                    } else {
+                        this._order = [[index, nextDir]];
+                    }
+
+                    this._getData();
+                });
+            }
+
+            if (this._settings.paging) {
+                dom.addEventDelegate(this._pagination, 'click', '[data-page]', e => {
+                    const page = dom.getDataset(e.currentTarget, 'page');
+                    this._offset = (page - 1) * this._limit;
+
+                    this._getData();
+                });
+            }
+        }
+
+    });
+
+
+    /**
+     * Table Index
+     */
+
+    Object.assign(Table.prototype, {
+
+        _buildIndex() {
+            this._index = [];
+            for (const [index, column] of this._columns.entries()) {
+                if (!column.orderable) {
+                    return false
                 }
 
-                // get default order
-                // check if column has order, if so reverse
-                // check if shift key is pressed, if so append
-                // else set order
+                const key = column.key || index;
+                this._index[key] = [];
 
-                this._order = [[index, 'asc']];
+                const valueLookup = {};
 
-                this._getData();
-            });
+                for (const [rowIndex, result] of this._data.entries()) {
+                    const value = result[key];
 
-            dom.addEventDelegate(this._pagination, 'click', '[data-page]', e => {
-                const page = dom.getDataset(e.currentTarget, 'page');
-            });
+                    if (!(value in valueLookup)) {
+                        valueLookup[value] = [];
+                    }
+
+                    valueLookup[value].push(rowIndex);
+                }
+
+                const values = Object.keys(valueLookup).sort((a, b) => {
+                    const aTest = a.match(/^(.*?)(\d+)$/);
+                    const bTest = b.match(/^(.*?)(\d+)$/);
+
+                    if (aTest && bTest && aTest[1] === bTest[1]) {
+                        return aTest[2] - bTest[2];
+                    }
+
+                    const aLower = a.toLowerCase();
+                    const bLower = b.toLowerCase();
+                    return aLower.localeCompare(bLower);
+                });
+
+                for (const value of values) {
+                    this._index[key].push(valueLookup[value])
+                }
+            }
+        },
+
+        _getOrderedIndexes(onlyRows = null, offset = this._offset, limit = this._limit, orderIndex = 0) {
+            const [index, direction] = this._order[orderIndex];
+            const key = this._columns[index].key || index;
+            let rowLookup = this._index[key];
+
+            if (direction === 'desc') {
+                rowLookup = rowLookup.slice().reverse();
+            }
+
+            let current = 0;
+            const results = [];
+            for (const rows of rowLookup) {
+                let filteredRows = onlyRows ?
+                    rows.filter(row => onlyRows.includes(row)) :
+                    rows;
+
+                if (direction === 'desc') {
+                    filteredRows = filteredRows.slice().reverse();
+                }
+
+                if (offset > current + filteredRows.length || !filteredRows.length) {
+                    current += rows.length;
+                    continue;
+                }
+
+                const sortedRows = filteredRows.length > 1 && orderIndex < this._order.length - 1 ?
+                    this._getOrderedIndexes(filteredRows, 0, Math.min(filteredRows.length, limit - results.length), orderIndex + 1) :
+                    rows;
+
+                for (const row of sortedRows) {
+                    current++;
+
+                    if (current < offset) {
+                        continue;
+                    }
+
+                    results.push(row);
+
+                    if (results.length == limit) {
+                        return results;
+                    }
+                }
+            }
+
+            return results;
         }
 
     });
@@ -157,58 +303,55 @@
         _getDataInit() {
             this._getData = _ => {
 
-                let results = this._data;
+                const total = this._data.length;
+                let filtered = total;
 
-                if (this._filter) {
-                    const escapedFilter = Core.escapeRegExp(this._filter);
+                let rowIndexes = null;
+
+                if (this._term) {
+                    rowIndexes = [];
+
+                    const escapedFilter = Core.escapeRegExp(this._term);
                     const regExp = new RegExp(escapedFilter, 'i');
 
-                    const normalized = this._filter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const normalized = this._term.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                     const escapedNormal = Core.escapeRegExp(normalized);
                     const regExpNormal = new RegExp(escapedNormal, 'i');
 
                     // filter results
-                    results = results.filter(item => {
+                    for (const [rowIndex, result] of this._data.entries()) {
                         for (const [index, column] of this._columns.entries()) {
                             if (!column.searchable) {
                                 continue;
                             }
 
-                            if (regExp.test(item[index]) || regExpNormal.test(item[index])) {
-                                return true;
+                            const key = column.key || index;
+
+                            if (regExp.test(result[key]) || regExpNormal.test(result[key])) {
+                                rowIndexes.push(rowIndex);
                             }
                         }
+                    }
 
-                        return false;
-                    });
+                    filtered = rowIndexes.length;
                 }
 
                 // order
-                results = results.sort((a, b) => {
-                    for (const [index, direction] of this._order) {
-                        const aLower = a[index].toLowerCase();
-                        const bLower = b[index].toLowerCase();
-                        const diff = aLower.localeCompare(bLower);
+                if (this._settings.ordering) {
+                    rowIndexes = this._getOrderedIndexes(rowIndexes);
+                }
 
-                        if (!diff) {
-                            continue;
-                        }
+                let results = [];
 
-                        if (direction.toLowerCase() === 'desc') {
-                            diff *= -1;
-                        }
-
-                        return diff;
+                if (rowIndexes) {
+                    for (const rowIndex of rowIndexes) {
+                        results.push(this._data[rowIndex]);
                     }
+                } else {
+                    results = this._data.slice(this._offset, this._offset + this._limit);
+                }
 
-                    return 0;
-                });
-
-                this._renderResults({
-                    filtered: results.length,
-                    results: results.slice(this._offset, this._offset + this._limit),
-                    total: this._data.length
-                });
+                this._renderResults({ filtered, results, total });
             };
         },
 
@@ -224,13 +367,23 @@
                     this._request = null;
                 }
 
+                const options = {};
+
+                if (this._term) {
+                    options.term = this._term;
+                }
+
+                if (this._settings.ordering) {
+                    options.order = this._order;
+                }
+
+                if (this._settings.paging) {
+                    options.offset = this._offset;
+                    options.limit = this._limit;
+                }
+
                 // render loading
-                const request = this._getResults({
-                    filter: this._filter,
-                    offset: this._offset,
-                    limit: this._limit,
-                    order: this._order
-                });
+                const request = this._getResults(options);
 
                 request.then(response => {
                     this._renderResults(response);
@@ -308,8 +461,23 @@
             this._postCol2 = dom.create('div');
             dom.append(postRow, this._postCol2);
 
-            this._renderSearch();
-            this._renderLengthSelect();
+            const pageContainer = dom.create('div', {
+                class: 'd-flex'
+            });
+            dom.append(this._postCol2, pageContainer);
+
+            this._pagination = dom.create('div', {
+                class: 'pagination pagination-sm mx-auto me-sm-0'
+            });
+            dom.append(pageContainer, this._pagination);
+
+            if (this._settings.searching) {
+                this._renderSearch();
+            }
+
+            if (this._settings.lengthChange) {
+                this._renderLengthSelect();
+            }
 
             dom.append(this._container, preRow);
             dom.append(this._container, this._node);
@@ -322,46 +490,37 @@
             const row = dom.create('tr');
 
             for (const [index, heading] of this._headings.entries()) {
-                const cell = dom.create('th');
-                dom.append(row, cell);
-
-                const container = dom.create('div', {
-                    class: 'd-flex justify-content-between'
-                });
-                dom.append(cell, container);
-
-                const title = dom.create('div', {
-                    class: 'fw-bold',
+                const cell = dom.create('th', {
+                    class: 'table-heading',
                     html: heading
                 });
-                dom.append(container, title);
+                dom.append(row, cell);
 
-                if (!this._columns[index].orderable) {
+                if (!this._settings.ordering || !this._columns[index].orderable) {
                     continue;
                 }
 
-                dom.setStyle(cell, 'cursor', 'pointer');
-
-                let icon = 'icon-sort';
+                let sortClass = 'table-sort';
                 for (const order of this._order) {
                     if (order[0] != index) {
                         continue;
                     }
 
                     if (order[1] == 'asc') {
-                        icon = 'icon-sort-asc';
+                        sortClass += ' table-sort-asc';
                     } else {
-                        icon = 'icon-sort-desc';
+                        sortClass += ' table-sort-desc';
                     }
                 }
 
-                const sort = dom.create('span', {
-                    class: `${icon} align-self-center`
-                });
-                dom.append(container, sort);
+                dom.addClass(cell, sortClass);
             }
 
             dom.append(this._thead, row);
+
+            if (this._settings.headerCallback) {
+                this._settings.headerCallback(this._head, this._data, this._offset, this._offset + this._limit);
+            }
         },
 
         _renderInfo(data) {
@@ -373,12 +532,20 @@
 
             const start = this._offset + 1;
             const end = this._offset + data.results.length;
+            let infoText = `Showing results ${start} to ${end} of ${data.filtered}.`;
+
+            if (this._settings.infoCallback) {
+                infoText = this._settings.infoCallback(start, end, data.total, data.filtered, text);
+            }
+
             const text = dom.create('small', {
-                text: `Showing results ${start} to ${end} of ${data.filtered}.`
+                text: infoText
             });
             dom.append(container, text);
 
             dom.append(this._postCol1, container);
+
+
         },
 
         _renderLengthSelect() {
@@ -417,7 +584,7 @@
                     text: length
                 });
 
-                if (length == this._length) {
+                if (length == this._limit) {
                     dom.setAttribute(option, 'checked', true);
                 }
 
@@ -443,8 +610,11 @@
                 class: 'page-item'
             });
 
-            const link = dom.create('a', {
-                class: 'page-link ripple'
+            const link = dom.create('button', {
+                class: 'page-link ripple',
+                attributes: {
+                    type: 'button'
+                }
             });
             dom.append(container, link);
 
@@ -467,6 +637,10 @@
                 dom.setText(link, options.page);
             }
 
+            if (options.page) {
+                dom.setDataset(link, 'page', options.page);
+            }
+
             return container;
         },
 
@@ -474,29 +648,26 @@
             const totalPages = Math.ceil(data.filtered / this._limit);
             const page = 1 + (this._offset / this._limit);
 
-            dom.empty(this._postCol2);
-
-            const container = dom.create('div', {
-                class: 'd-flex'
-            });
-
-            this._pagination = dom.create('div', {
-                class: 'pagination pagination-sm mx-auto me-sm-0'
-            });
-            dom.append(container, this._pagination);
+            dom.empty(this._pagination);
 
             const prev = this._renderPageItem({
                 icon: 'icon-arrow-left',
-                disabled: page == 1
+                disabled: page == 1,
+                page: page > 1 ?
+                    page - 1 :
+                    null
             });
             dom.append(this._pagination, prev);
 
             let startPage = Math.max(page - 5, 1);
             let endPage = Math.min(page + 5, totalPages);
 
-            while (endPage - startPage > 5) {
-                startPage++;
-                endPage--;
+            while (endPage - startPage > 4) {
+                if (page - startPage > endPage - page) {
+                    startPage++;
+                } else {
+                    endPage--;
+                }
             }
 
             for (let current = startPage; current <= endPage; current++) {
@@ -509,27 +680,51 @@
 
             const next = this._renderPageItem({
                 icon: 'icon-arrow-right',
-                disabled: page == totalPages
+                disabled: page == totalPages,
+                page: page < totalPages ?
+                    page + 1 :
+                    null
             });
             dom.append(this._pagination, next);
-
-            dom.append(this._postCol2, container);
         },
 
         _renderResults(data) {
             dom.empty(this._tbody);
 
             this._renderHeadings();
-            this._renderPagination(data);
-            this._renderInfo(data);
 
-            for (const result of data.results) {
+            if (this._settings.paging) {
+                this._renderPagination(data);
+            }
+
+            if (this._settings.info) {
+                this._renderInfo(data);
+            }
+
+            for (const [index, result] of data.results.entries()) {
                 const row = this._renderRow(result);
+
+                if (this._settings.rowCallback) {
+                    this._settings.rowCallback(row, result, index, this._offset + index);
+                }
+
                 dom.append(this._tbody, row);
+
+                if (this._settings.createdRow) {
+                    this._settings.createdRow(row, result, index);
+                }
+            }
+
+            if (this._settings.drawCallback) {
+                this._settings.drawCallback();
+            }
+
+            if (this._settings.footerCallback) {
+                this._settings.footerCallback(this._tfoot, this._data, this._offset, this._offset + this._limit);
             }
         },
 
-        _renderRow(data, n, i) {
+        _renderRow(data) {
             const row = dom.create('tr');
 
             for (const [index, column] of this._columns.entries()) {
@@ -615,7 +810,14 @@
         length: 10,
         lengths: [10, 25, 50, 100],
         order: [[0, 'asc']],
-        columns: null
+        columns: null,
+        createdRow: null,
+        drawCallback: null,
+        footerCallback: null,
+        headerCallback: null,
+        infoCallback: null,
+        preDrawCallback: null,
+        rowCallback: null
     };
 
     UI.initComponent('table', Table);

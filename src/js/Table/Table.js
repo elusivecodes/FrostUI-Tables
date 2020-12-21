@@ -44,6 +44,7 @@ class Table extends UI.BaseComponent {
         }
 
         this._columns = this._columns.map(column => ({
+            dir: 'asc',
             key: null,
             orderData: null,
             orderable: true,
@@ -54,8 +55,11 @@ class Table extends UI.BaseComponent {
         this._offset = 0;
         this._limit = this._settings.length;
         this._order = this._settings.order.slice();
-        this._filter = null;
+        this._term = null;
 
+        if (this._data) {
+            this._buildIndex();
+        }
         this._render();
         this._events();
 

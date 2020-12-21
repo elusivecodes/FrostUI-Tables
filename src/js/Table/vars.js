@@ -7,7 +7,14 @@ Table.defaults = {
     length: 10,
     lengths: [10, 25, 50, 100],
     order: [[0, 'asc']],
-    columns: null
+    columns: null,
+    createdRow: null,
+    drawCallback: null,
+    footerCallback: null,
+    headerCallback: null,
+    infoCallback: null,
+    preDrawCallback: null,
+    rowCallback: null
 };
 
 UI.initComponent('table', Table);
