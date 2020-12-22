@@ -58,7 +58,7 @@ Object.assign(Table.prototype, {
                 results = this._data.slice(this._offset, this._offset + this._limit);
             }
 
-            this._renderResults({ filtered, results, total });
+            this._renderResults({ filtered, results, total, rowIndexes });
         };
     },
 
@@ -89,7 +89,7 @@ Object.assign(Table.prototype, {
                 options.limit = this._limit;
             }
 
-            // render loading
+            dom.show(this._loader);
             const request = this._getResults(options);
 
             request.then(response => {
@@ -97,7 +97,7 @@ Object.assign(Table.prototype, {
             }).catch(_ => {
                 // error
             }).finally(_ => {
-                // remove loading
+                dom.hide(this._loader);
 
                 if (this._request === request) {
                     this._request = null;

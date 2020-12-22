@@ -8,13 +8,14 @@
 [X] Callbacks
 [X] Options
 [X] Add Order index
+[X] Header/footer callbacks need display lookup
+[X] Add visible option to columns
+[X] Add footer rendering handling
+[X] Add no results
+[X] Add loading
 
-[ ] Header/footer callbacks need display lookup
-
-[ ] Add visible option to columns
-[ ] Add footer rendering handling
+[ ] Add draw count for getResults
 [ ] Add Lang options
-[ ] Add loading
 [ ] Add classes map
 [ ] Add events
 

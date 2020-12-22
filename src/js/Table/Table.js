@@ -49,8 +49,17 @@ class Table extends UI.BaseComponent {
             orderData: null,
             orderable: true,
             searchable: true,
+            visible: true,
             ...column
         }));
+
+        this._columnCount = this._columns.reduce((acc, v) => {
+            if (v.visible) {
+                acc++;
+            }
+
+            return acc;
+        }, 0);
 
         this._offset = 0;
         this._limit = this._settings.length;

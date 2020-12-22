@@ -5,12 +5,24 @@
 Object.assign(Table.prototype, {
 
     _render() {
+        this._tfoot = dom.findOne('tfoot', this._node);
+        dom.detach(this._tfoot);
+
         dom.empty(this._node);
 
         this._container = dom.create('div', {
-            class: 'mb-1'
+            class: 'position-relative mb-2'
         });
         dom.before(this._node, this._container);
+
+        this._loader = dom.create('div', {
+            class: 'position-absolute top-50 start-50 translate-middle'
+        });
+
+        const loaderIcon = dom.create('span', {
+            class: 'spinner-border text-primary'
+        });
+        dom.append(this._loader, loaderIcon);
 
         const preRow = dom.create('div', {
             class: 'd-sm-flex justify-content-between mb-2'
@@ -27,6 +39,8 @@ Object.assign(Table.prototype, {
 
         this._tbody = dom.create('tbody');
         dom.append(this._node, this._tbody);
+
+        dom.append(this._node, this._tfoot);
 
         const postRow = dom.create('div', {
             class: 'd-sm-flex justify-content-between'
@@ -56,6 +70,8 @@ Object.assign(Table.prototype, {
             this._renderLengthSelect();
         }
 
+        dom.hide(this._loader);
+        dom.append(this._container, this._loader);
         dom.append(this._container, preRow);
         dom.append(this._container, this._node);
         dom.append(this._container, postRow);
@@ -67,6 +83,10 @@ Object.assign(Table.prototype, {
         const row = dom.create('tr');
 
         for (const [index, heading] of this._headings.entries()) {
+            if (!this._columns[index].visible) {
+                continue;
+            }
+
             const cell = dom.create('th', {
                 class: 'table-heading',
                 html: heading
@@ -94,10 +114,6 @@ Object.assign(Table.prototype, {
         }
 
         dom.append(this._thead, row);
-
-        if (this._settings.headerCallback) {
-            this._settings.headerCallback(this._head, this._data, this._offset, this._offset + this._limit);
-        }
     },
 
     _renderInfo(data) {
@@ -121,8 +137,6 @@ Object.assign(Table.prototype, {
         dom.append(container, text);
 
         dom.append(this._postCol1, container);
-
-
     },
 
     _renderLengthSelect() {
@@ -270,6 +284,10 @@ Object.assign(Table.prototype, {
 
         this._renderHeadings();
 
+        if (this._settings.headerCallback) {
+            this._settings.headerCallback(this._head, this._data || data.results, this._offset, this._offset + this._limit, data.rowIndexes);
+        }
+
         if (this._settings.paging) {
             this._renderPagination(data);
         }
@@ -278,17 +296,34 @@ Object.assign(Table.prototype, {
             this._renderInfo(data);
         }
 
-        for (const [index, result] of data.results.entries()) {
-            const row = this._renderRow(result);
+        if (!data.results.length) {
+            const row = dom.create('tr');
 
-            if (this._settings.rowCallback) {
-                this._settings.rowCallback(row, result, index, this._offset + index);
-            }
+            const cell = dom.create('td', {
+                class: 'text-center',
+                html: this._term ?
+                    'No results to show.' :
+                    'No data to display.',
+                attributes: {
+                    colspan: this._columnCount
+                }
+            });
+            dom.append(row, cell);
 
             dom.append(this._tbody, row);
+        } else {
+            for (const [index, result] of data.results.entries()) {
+                const row = this._renderRow(result);
 
-            if (this._settings.createdRow) {
-                this._settings.createdRow(row, result, index);
+                if (this._settings.rowCallback) {
+                    this._settings.rowCallback(row, result, index, this._offset + index);
+                }
+
+                dom.append(this._tbody, row);
+
+                if (this._settings.createdRow) {
+                    this._settings.createdRow(row, result, index);
+                }
             }
         }
 
@@ -296,8 +331,8 @@ Object.assign(Table.prototype, {
             this._settings.drawCallback();
         }
 
-        if (this._settings.footerCallback) {
-            this._settings.footerCallback(this._tfoot, this._data, this._offset, this._offset + this._limit);
+        if (this._tfoot && this._settings.footerCallback) {
+            this._settings.footerCallback(this._tfoot, this._data || data.results, this._offset, this._offset + this._limit, data.rowIndexes);
         }
     },
 
@@ -305,6 +340,10 @@ Object.assign(Table.prototype, {
         const row = dom.create('tr');
 
         for (const [index, column] of this._columns.entries()) {
+            if (!column.visible) {
+                continue;
+            }
+
             const key = column.key || index;
             const value = data[key];
 

@@ -79,8 +79,17 @@
                 orderData: null,
                 orderable: true,
                 searchable: true,
+                visible: true,
                 ...column
             }));
+
+            this._columnCount = this._columns.reduce((acc, v) => {
+                if (v.visible) {
+                    acc++;
+                }
+
+                return acc;
+            }, 0);
 
             this._offset = 0;
             this._limit = this._settings.length;
@@ -351,7 +360,7 @@
                     results = this._data.slice(this._offset, this._offset + this._limit);
                 }
 
-                this._renderResults({ filtered, results, total });
+                this._renderResults({ filtered, results, total, rowIndexes });
             };
         },
 
@@ -382,7 +391,7 @@
                     options.limit = this._limit;
                 }
 
-                // render loading
+                dom.show(this._loader);
                 const request = this._getResults(options);
 
                 request.then(response => {
@@ -390,7 +399,7 @@
                 }).catch(_ => {
                     // error
                 }).finally(_ => {
-                    // remove loading
+                    dom.hide(this._loader);
 
                     if (this._request === request) {
                         this._request = null;
@@ -428,12 +437,24 @@
     Object.assign(Table.prototype, {
 
         _render() {
+            this._tfoot = dom.findOne('tfoot', this._node);
+            dom.detach(this._tfoot);
+
             dom.empty(this._node);
 
             this._container = dom.create('div', {
-                class: 'mb-1'
+                class: 'position-relative mb-2'
             });
             dom.before(this._node, this._container);
+
+            this._loader = dom.create('div', {
+                class: 'position-absolute top-50 start-50 translate-middle'
+            });
+
+            const loaderIcon = dom.create('span', {
+                class: 'spinner-border text-primary'
+            });
+            dom.append(this._loader, loaderIcon);
 
             const preRow = dom.create('div', {
                 class: 'd-sm-flex justify-content-between mb-2'
@@ -450,6 +471,8 @@
 
             this._tbody = dom.create('tbody');
             dom.append(this._node, this._tbody);
+
+            dom.append(this._node, this._tfoot);
 
             const postRow = dom.create('div', {
                 class: 'd-sm-flex justify-content-between'
@@ -479,6 +502,8 @@
                 this._renderLengthSelect();
             }
 
+            dom.hide(this._loader);
+            dom.append(this._container, this._loader);
             dom.append(this._container, preRow);
             dom.append(this._container, this._node);
             dom.append(this._container, postRow);
@@ -490,6 +515,10 @@
             const row = dom.create('tr');
 
             for (const [index, heading] of this._headings.entries()) {
+                if (!this._columns[index].visible) {
+                    continue;
+                }
+
                 const cell = dom.create('th', {
                     class: 'table-heading',
                     html: heading
@@ -517,10 +546,6 @@
             }
 
             dom.append(this._thead, row);
-
-            if (this._settings.headerCallback) {
-                this._settings.headerCallback(this._head, this._data, this._offset, this._offset + this._limit);
-            }
         },
 
         _renderInfo(data) {
@@ -544,8 +569,6 @@
             dom.append(container, text);
 
             dom.append(this._postCol1, container);
-
-
         },
 
         _renderLengthSelect() {
@@ -693,6 +716,10 @@
 
             this._renderHeadings();
 
+            if (this._settings.headerCallback) {
+                this._settings.headerCallback(this._head, this._data || data.results, this._offset, this._offset + this._limit, data.rowIndexes);
+            }
+
             if (this._settings.paging) {
                 this._renderPagination(data);
             }
@@ -701,17 +728,34 @@
                 this._renderInfo(data);
             }
 
-            for (const [index, result] of data.results.entries()) {
-                const row = this._renderRow(result);
+            if (!data.results.length) {
+                const row = dom.create('tr');
 
-                if (this._settings.rowCallback) {
-                    this._settings.rowCallback(row, result, index, this._offset + index);
-                }
+                const cell = dom.create('td', {
+                    class: 'text-center',
+                    html: this._term ?
+                        'No results to show.' :
+                        'No data to display.',
+                    attributes: {
+                        colspan: this._columnCount
+                    }
+                });
+                dom.append(row, cell);
 
                 dom.append(this._tbody, row);
+            } else {
+                for (const [index, result] of data.results.entries()) {
+                    const row = this._renderRow(result);
 
-                if (this._settings.createdRow) {
-                    this._settings.createdRow(row, result, index);
+                    if (this._settings.rowCallback) {
+                        this._settings.rowCallback(row, result, index, this._offset + index);
+                    }
+
+                    dom.append(this._tbody, row);
+
+                    if (this._settings.createdRow) {
+                        this._settings.createdRow(row, result, index);
+                    }
                 }
             }
 
@@ -719,8 +763,8 @@
                 this._settings.drawCallback();
             }
 
-            if (this._settings.footerCallback) {
-                this._settings.footerCallback(this._tfoot, this._data, this._offset, this._offset + this._limit);
+            if (this._tfoot && this._settings.footerCallback) {
+                this._settings.footerCallback(this._tfoot, this._data || data.results, this._offset, this._offset + this._limit, data.rowIndexes);
             }
         },
 
@@ -728,6 +772,10 @@
             const row = dom.create('tr');
 
             for (const [index, column] of this._columns.entries()) {
+                if (!column.visible) {
+                    continue;
+                }
+
                 const key = column.key || index;
                 const value = data[key];
 
