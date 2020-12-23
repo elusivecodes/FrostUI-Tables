@@ -2,6 +2,7 @@
     font-weight: bold;
 
     &.table-sort {
+        cursor: pointer;
         padding-right: 1.5rem;
         position: relative;
     
@@ -17,16 +18,16 @@
         &::before {
             top: calc(50% - 2px);
             right: .5rem;
-            border-width: 0 0.4rem 0.4rem;
-            border-bottom-color: rgba(0, 0, 0, 0.15);
+            border-width: 0 .35rem .35rem;
+            border-bottom-color: rgba(0, 0, 0, .15);
             transform: translateY(-100%);
         }
 
         &::after {
             bottom: calc(50% - 2px);
             right: .5rem;
-            border-width: 0.4rem 0.4rem 0;
-            border-top-color: rgba(0, 0, 0, 0.15);
+            border-width: .35rem .35rem 0;
+            border-top-color: rgba(0, 0, 0, .15);
             transform: translateY(100%);
         }
     }

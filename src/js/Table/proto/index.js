@@ -27,11 +27,8 @@ Object.assign(Table.prototype, {
             }
 
             const values = Object.keys(valueLookup).sort((a, b) => {
-                const aTest = a.match(/^(.*?)(\d+)$/);
-                const bTest = b.match(/^(.*?)(\d+)$/);
-
-                if (aTest && bTest && aTest[1] === bTest[1]) {
-                    return aTest[2] - bTest[2];
+                if (Core.isNumeric(a) && Core.isNumeric(b)) {
+                    return a - b;
                 }
 
                 const aLower = a.toLowerCase();

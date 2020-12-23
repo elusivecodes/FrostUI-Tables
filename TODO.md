@@ -13,9 +13,9 @@
 [X] Add footer rendering handling
 [X] Add no results
 [X] Add loading
+[X] Add draw count for getResults
+[X] Add Lang options
 
-[ ] Add draw count for getResults
-[ ] Add Lang options
 [ ] Add classes map
 [ ] Add events
 

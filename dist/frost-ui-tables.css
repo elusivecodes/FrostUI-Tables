@@ -2,6 +2,7 @@
   font-weight: bold;
 }
 .table-heading.table-sort {
+  cursor: pointer;
   padding-right: 1.5rem;
   position: relative;
 }
@@ -16,14 +17,14 @@
 .table-heading.table-sort::before {
   top: calc(50% - 2px);
   right: 0.5rem;
-  border-width: 0 0.4rem 0.4rem;
+  border-width: 0 0.35rem 0.35rem;
   border-bottom-color: rgba(0, 0, 0, 0.15);
   transform: translateY(-100%);
 }
 .table-heading.table-sort::after {
   bottom: calc(50% - 2px);
   right: 0.5rem;
-  border-width: 0.4rem 0.4rem 0;
+  border-width: 0.35rem 0.35rem 0;
   border-top-color: rgba(0, 0, 0, 0.15);
   transform: translateY(100%);
 }

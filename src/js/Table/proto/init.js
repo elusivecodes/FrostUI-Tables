@@ -93,7 +93,9 @@ Object.assign(Table.prototype, {
             const request = this._getResults(options);
 
             request.then(response => {
-                this._renderResults(response);
+                if (this._request === request) {
+                    this._renderResults(response);
+                }
             }).catch(_ => {
                 // error
             }).finally(_ => {

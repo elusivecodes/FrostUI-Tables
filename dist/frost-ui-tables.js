@@ -232,11 +232,8 @@
                 }
 
                 const values = Object.keys(valueLookup).sort((a, b) => {
-                    const aTest = a.match(/^(.*?)(\d+)$/);
-                    const bTest = b.match(/^(.*?)(\d+)$/);
-
-                    if (aTest && bTest && aTest[1] === bTest[1]) {
-                        return aTest[2] - bTest[2];
+                    if (Core.isNumeric(a) && Core.isNumeric(b)) {
+                        return a - b;
                     }
 
                     const aLower = a.toLowerCase();
@@ -395,7 +392,9 @@
                 const request = this._getResults(options);
 
                 request.then(response => {
-                    this._renderResults(response);
+                    if (this._request === request) {
+                        this._renderResults(response);
+                    }
                 }).catch(_ => {
                     // error
                 }).finally(_ => {
@@ -557,7 +556,20 @@
 
             const start = this._offset + 1;
             const end = this._offset + data.results.length;
-            let infoText = `Showing results ${start} to ${end} of ${data.filtered}.`;
+            let infoText = data.total < data.filtered ?
+                this._settings.lang.infoFiltered :
+                this._settings.lang.info;
+
+            const replacements = {
+                start,
+                end,
+                filtered: data.filtered,
+                total: data.total
+            };
+
+            for (const [key, value] of Object.entries(replacements)) {
+                infoText = infoText.replace(`{${key}}`, value);
+            }
 
             if (this._settings.infoCallback) {
                 infoText = this._settings.infoCallback(start, end, data.total, data.filtered, text);
@@ -580,12 +592,6 @@
                 class: 'mb-1 mb-sm-0'
             });
             dom.append(container, label);
-
-            const labelPre = dom.create('small', {
-                class: 'me-1',
-                text: 'Show'
-            });
-            dom.append(label, labelPre);
 
             const inputContainer = dom.create('div', {
                 class: 'form-input d-inline-block',
@@ -621,7 +627,7 @@
 
             const labelPost = dom.create('small', {
                 class: 'ms-1',
-                text: 'results'
+                text: this._settings.lang.perPage
             });
             dom.append(label, labelPost);
 
@@ -634,6 +640,7 @@
             });
 
             const link = dom.create('button', {
+                html: options.text || options.page,
                 class: 'page-link ripple',
                 attributes: {
                     type: 'button'
@@ -651,15 +658,6 @@
                 dom.addClass(container, 'active');
             }
 
-            if (options.icon) {
-                const icon = dom.create('span', {
-                    class: options.icon
-                });
-                dom.append(link, icon);
-            } else {
-                dom.setText(link, options.page);
-            }
-
             if (options.page) {
                 dom.setDataset(link, 'page', options.page);
             }
@@ -673,8 +671,15 @@
 
             dom.empty(this._pagination);
 
+            const first = this._renderPageItem({
+                text: this._settings.lang.paginate.first,
+                disabled: page == 1,
+                page: 1
+            });
+            dom.append(this._pagination, first);
+
             const prev = this._renderPageItem({
-                icon: 'icon-arrow-left',
+                text: this._settings.lang.paginate.previous,
                 disabled: page == 1,
                 page: page > 1 ?
                     page - 1 :
@@ -702,13 +707,20 @@
             }
 
             const next = this._renderPageItem({
-                icon: 'icon-arrow-right',
+                text: this._settings.lang.paginate.next,
                 disabled: page == totalPages,
                 page: page < totalPages ?
                     page + 1 :
                     null
             });
             dom.append(this._pagination, next);
+
+            const last = this._renderPageItem({
+                text: this._settings.lang.paginate.last,
+                disabled: page == totalPages,
+                page: totalPages
+            });
+            dom.append(this._pagination, last);
         },
 
         _renderResults(data) {
@@ -734,8 +746,8 @@
                 const cell = dom.create('td', {
                     class: 'text-center',
                     html: this._term ?
-                        'No results to show.' :
-                        'No data to display.',
+                        this._settings.lang.noResults :
+                        this._settings.lang.noData,
                     attributes: {
                         colspan: this._columnCount
                     }
@@ -800,7 +812,7 @@
                 class: 'input-filled input-sm',
                 attributes: {
                     type: 'text',
-                    placeholder: 'Search'
+                    placeholder: this._settings.lang.search
                 }
             });
             dom.append(container, this._searchInput);
@@ -859,6 +871,20 @@
         lengths: [10, 25, 50, 100],
         order: [[0, 'asc']],
         columns: null,
+        lang: {
+            info: 'Showing results {start} to {end} of {total}',
+            infoFiltered: 'Showing results {start} to {end} of {filtered} (filtered from {total} total)',
+            noData: 'No data available',
+            noResults: 'No results to show',
+            perPage: 'Per Page',
+            search: 'Search',
+            paginate: {
+                first: 'First',
+                last: 'Last',
+                next: 'Next',
+                previous: 'Previous'
+            }
+        },
         createdRow: null,
         drawCallback: null,
         footerCallback: null,
