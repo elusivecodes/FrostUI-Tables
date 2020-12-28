@@ -269,7 +269,7 @@ Object.assign(Table.prototype, {
         }
 
         if (options.page) {
-            dom.setDataset(link, 'page', options.page);
+            dom.setDataset(link, 'uiPage', options.page);
         }
 
         return container;

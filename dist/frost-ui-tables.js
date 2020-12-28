@@ -467,10 +467,10 @@
             }
 
             if (this._settings.paging) {
-                dom.addEventDelegate(this._pagination, 'click.ui.table', '[data-page]', e => {
+                dom.addEventDelegate(this._pagination, 'click.ui.table', '[data-ui-page]', e => {
                     e.preventDefault();
 
-                    const page = dom.getDataset(e.currentTarget, 'page');
+                    const page = dom.getDataset(e.currentTarget, 'uiPage');
                     this.page(page);
                 });
             }
@@ -1018,7 +1018,7 @@
             }
 
             if (options.page) {
-                dom.setDataset(link, 'page', options.page);
+                dom.setDataset(link, 'uiPage', options.page);
             }
 
             return container;
@@ -1293,10 +1293,10 @@
             perPage: 'Per Page',
             search: 'Search',
             paginate: {
-                first: 'First',
-                last: 'Last',
-                next: 'Next',
-                previous: 'Previous'
+                first: '&laquo;',
+                last: '&raquo;',
+                next: '&gt;',
+                previous: '&lt;'
             }
         },
         createdRow: null,

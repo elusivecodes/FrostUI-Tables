@@ -83,10 +83,10 @@ Object.assign(Table.prototype, {
         }
 
         if (this._settings.paging) {
-            dom.addEventDelegate(this._pagination, 'click.ui.table', '[data-page]', e => {
+            dom.addEventDelegate(this._pagination, 'click.ui.table', '[data-ui-page]', e => {
                 e.preventDefault();
 
-                const page = dom.getDataset(e.currentTarget, 'page');
+                const page = dom.getDataset(e.currentTarget, 'uiPage');
                 this.page(page);
             });
         }

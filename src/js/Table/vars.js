@@ -18,10 +18,10 @@ Table.defaults = {
         perPage: 'Per Page',
         search: 'Search',
         paginate: {
-            first: 'First',
-            last: 'Last',
-            next: 'Next',
-            previous: 'Previous'
+            first: '&laquo;',
+            last: '&raquo;',
+            next: '&gt;',
+            previous: '&lt;'
         }
     },
     createdRow: null,
