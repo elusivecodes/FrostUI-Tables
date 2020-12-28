@@ -1,6 +1,9 @@
-[~] Finish destroy method (dispose) -- detach node
-[ ] Filtering should only happen when searching*
+[~] Fix destroy method
+[ ] Finish events
+[ ] Add clear method
 
-[ ] Child rows?
+[ ] Check JSDoc comments for options*
+[ ] Rename destroy methods to dispose*
+
 [ ] Buttons (CSV/Excel/Print)
-[ ] Responsive?
+[ ] Responsive/Child rows

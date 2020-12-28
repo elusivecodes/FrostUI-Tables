@@ -238,6 +238,31 @@
 
                 dom.triggerEvent(this._node, 'search.ui.table');
 
+                if (this._term) {
+                    this._filterIndexes = [];
+
+                    const escapedFilter = Core.escapeRegExp(this._term);
+                    const regExp = new RegExp(escapedFilter, 'i');
+
+                    // filter results
+                    for (const [index, result] of this._data.entries()) {
+                        for (const column of this._columns) {
+                            if (!column.searchable) {
+                                continue;
+                            }
+
+                            if (regExp.test(result[column.key])) {
+                                this._filterIndexes.push(index);
+                            }
+                        }
+                    }
+
+                    this._filtered = this._filterIndexes.length;
+                } else {
+                    this._filterIndexes = null;
+                    this._filtered = this._total;
+                }
+
                 this._getData();
             }
 
@@ -402,7 +427,6 @@
             if (this._settings.searching) {
                 // debounced search event
                 const searchDebounced = Core.debounce(term => {
-                    console.log(term);
                     this.search(term);
                 }, this._settings.debounceInput);
 
@@ -617,39 +641,12 @@
          */
         _getDataInit() {
             this._total = this._data.length;
+            this._filtered = this._total;
 
             this._getData = _ => {
                 this.loading();
 
-                this._rowIndexes = null;
-
-                if (this._term) {
-                    this._rowIndexes = [];
-
-                    const escapedFilter = Core.escapeRegExp(this._term);
-                    const regExp = new RegExp(escapedFilter, 'i');
-
-                    const normalized = this._term.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                    const escapedNormal = Core.escapeRegExp(normalized);
-                    const regExpNormal = new RegExp(escapedNormal, 'i');
-
-                    // filter results
-                    for (const [index, result] of this._data.entries()) {
-                        for (const column of this._columns) {
-                            if (!column.searchable) {
-                                continue;
-                            }
-
-                            if (regExp.test(result[column.key]) || regExpNormal.test(result[column.key])) {
-                                this._rowIndexes.push(index);
-                            }
-                        }
-                    }
-
-                    this._filtered = this._rowIndexes.length;
-                } else {
-                    this._filtered = this._total;
-                }
+                this._rowIndexes = this._filterIndexes;
 
                 // order
                 if (this._settings.ordering) {

@@ -208,6 +208,31 @@ class Table extends UI.BaseComponent {
 
             dom.triggerEvent(this._node, 'search.ui.table');
 
+            if (this._term) {
+                this._filterIndexes = [];
+
+                const escapedFilter = Core.escapeRegExp(this._term);
+                const regExp = new RegExp(escapedFilter, 'i');
+
+                // filter results
+                for (const [index, result] of this._data.entries()) {
+                    for (const column of this._columns) {
+                        if (!column.searchable) {
+                            continue;
+                        }
+
+                        if (regExp.test(result[column.key])) {
+                            this._filterIndexes.push(index);
+                        }
+                    }
+                }
+
+                this._filtered = this._filterIndexes.length;
+            } else {
+                this._filterIndexes = null;
+                this._filtered = this._total;
+            }
+
             this._getData();
         }
 

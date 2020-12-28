@@ -18,7 +18,6 @@ Object.assign(Table.prototype, {
         if (this._settings.searching) {
             // debounced search event
             const searchDebounced = Core.debounce(term => {
-                console.log(term);
                 this.search(term);
             }, this._settings.debounceInput);
 
