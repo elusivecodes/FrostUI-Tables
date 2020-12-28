@@ -1,36 +1,33 @@
-.table-heading {
-  font-weight: bold;
-}
-.table-heading.table-sort {
+.table-sort {
   cursor: pointer;
   padding-right: 1.5rem;
   position: relative;
 }
-.table-heading.table-sort::before,
-.table-heading.table-sort::after {
+.table-sort::before,
+.table-sort::after {
   position: absolute;
   display: block;
   content: "";
   border-color: transparent;
   border-style: solid;
 }
-.table-heading.table-sort::before {
-  top: calc(50% - 2px);
+.table-sort::before {
+  top: calc(50% - (1px * 2));
   right: 0.5rem;
   border-width: 0 0.35rem 0.35rem;
   border-bottom-color: rgba(0, 0, 0, 0.15);
   transform: translateY(-100%);
 }
-.table-heading.table-sort::after {
-  bottom: calc(50% - 2px);
+.table-sort::after {
+  bottom: calc(50% - (1px * 2));
   right: 0.5rem;
   border-width: 0.35rem 0.35rem 0;
   border-top-color: rgba(0, 0, 0, 0.15);
   transform: translateY(100%);
 }
-.table-heading.table-sort-asc::before {
+.table-sort-asc::before {
   border-bottom-color: royalblue;
 }
-.table-heading.table-sort-desc::after {
+.table-sort-desc::after {
   border-top-color: royalblue;
 }

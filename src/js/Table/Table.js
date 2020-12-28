@@ -43,9 +43,11 @@ class Table extends UI.BaseComponent {
             this._columns = new Array(this._headings.length).fill();
         }
 
-        this._columns = this._columns.map(column => ({
+        this._columns = this._columns.map((column, index) => ({
+            class: null,
             dir: 'asc',
-            key: null,
+            format: null,
+            key: index,
             orderData: null,
             orderable: true,
             searchable: true,
@@ -66,9 +68,7 @@ class Table extends UI.BaseComponent {
         this._order = this._settings.order.slice();
         this._term = null;
 
-        if (this._data) {
-            this._buildIndex();
-        }
+        this._buildIndex();
         this._render();
         this._events();
 
@@ -79,7 +79,139 @@ class Table extends UI.BaseComponent {
      * Destroy the Table.
      */
     destroy() {
+        dom.before(this._container, this._node);
+        dom.remove(this._container);
+        dom.empty(this._node);
+
+        for (const child of dom.children(this._original)) {
+            dom.append(this._node, child);
+        }
+
         super.destroy();
+    }
+
+    /**
+     * Get the Table information.
+     * @returns {object} The Table information.
+     */
+    info() {
+        return {
+            end: this._offset + this._limit,
+            filtered: this._filtered,
+            start: this._offset,
+            total: this._total
+        };
+    }
+
+    /**
+     * Set the Table length.
+     * @param {number} length The length.
+     * @returns {Table} The Table.
+     */
+    length(length) {
+        if (this._settings.paging) {
+            this._limit = length;
+
+            dom.triggerEvent(this._node, 'length.ui.table');
+
+            this._getData();
+        }
+
+        return this;
+    }
+
+    /**
+     * Trigger the loading indicator.
+     * @param {Boolean} [show=true] Whether to show the loading indicator.
+     * @returns {Table} The Table.
+     */
+    loading(show = true) {
+        if (show) {
+            dom.triggerEvent(this._node, 'processing.ui.table');
+            dom.show(this._loader);
+        } else {
+            dom.hide(this._loader);
+            dom.triggerEvent(this._node, 'processed.ui.table');
+        }
+
+        return this;
+    }
+
+    /**
+     * Set the Table order data.
+     * @param {array} order The order data.
+     * @returns {Table} The Table.
+     */
+    order(order) {
+        if (this._settings.ordering) {
+            this._order = order;
+
+            dom.triggerEvent(this._node, 'order.ui.table');
+
+            this._getData();
+        }
+
+        return this;
+    }
+
+    /**
+     * Set the Table page.
+     * @param {array} page The page.
+     * @returns {Table} The Table.
+     */
+    page(page) {
+        if (this._settings.paging) {
+            this._offset = (page - 1) * this._limit;
+
+            dom.triggerEvent(this._node, 'page.ui.table');
+
+            this._getData();
+        }
+
+        return this;
+    }
+
+    /**
+     * Redraw the Table.
+     * @returns {Table} The Table.
+     */
+    refresh() {
+        this._renderResults();
+
+        return this;
+    }
+
+    /**
+     * Reload the Table data.
+     * @param {Boolean} [reset=false] Whether to reset the offset.
+     * @returns {Table} The Table.
+     */
+    reload(reset = false) {
+        if (reset) {
+            this._offset = 0;
+        }
+
+        this._getData();
+
+        return this;
+    }
+
+    /**
+     * Search the Table for a term.
+     * @param {string} term The term to search for.
+     * @returns {Table} The table.
+     */
+    search(term) {
+        if (this._settings.searching) {
+            dom.setValue(this._searchInput, term);
+            this._term = term;
+
+            dom.triggerEvent(this._node, 'search.ui.table');
+
+            this._getData();
+        }
+
+        return this;
     }
 
 }

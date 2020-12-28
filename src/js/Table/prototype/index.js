@@ -4,26 +4,32 @@
 
 Object.assign(Table.prototype, {
 
+    /**
+     * Rebuild the index.
+     */
     _buildIndex() {
+        if (this._getResults || !this._settings.ordering) {
+            return;
+        }
+
         this._index = [];
-        for (const [index, column] of this._columns.entries()) {
+        for (const column of this._columns) {
             if (!column.orderable) {
                 return false
             }
 
-            const key = column.key || index;
-            this._index[key] = [];
+            this._index[column.key] = [];
 
             const valueLookup = {};
 
-            for (const [rowIndex, result] of this._data.entries()) {
-                const value = result[key];
+            for (const [index, result] of this._data.entries()) {
+                const value = result[column.key];
 
                 if (!(value in valueLookup)) {
                     valueLookup[value] = [];
                 }
 
-                valueLookup[value].push(rowIndex);
+                valueLookup[value].push(index);
             }
 
             const values = Object.keys(valueLookup).sort((a, b) => {
@@ -37,14 +43,41 @@ Object.assign(Table.prototype, {
             });
 
             for (const value of values) {
-                this._index[key].push(valueLookup[value])
+                this._index[column.key].push(valueLookup[value])
             }
         }
     },
 
-    _getOrderedIndexes(onlyRows = null, offset = this._offset, limit = this._limit, orderIndex = 0) {
-        const [index, direction] = this._order[orderIndex];
-        const key = this._columns[index].key || index;
+    /**
+     * Get real column ordering data.
+     * @returns {Array} The column ordering data.
+     */
+    _getOrder() {
+        const order = [];
+
+        for (const [index, direction] of this._order) {
+            if (this._columns[index].orderData) {
+                order.push(...this._columns[index.orderData]);
+            } else {
+                order.push([index, direction]);
+            }
+        }
+
+        return order;
+    },
+
+    /**
+     * Get a range of data indexes for filtered rows, based on order data.
+     * @param {Array} order The order data.
+     * @param {Array} [onlyRows=null] The filtered rows.
+     * @param {number} [offset] The starting offset.
+     * @param {number} [limit] The maximum rows to return.
+     * @param {number} [orderIndex=0] The order index.
+     * @returns {Array} The data indexes.
+     */
+    _getOrderedIndexes(order, onlyRows = null, offset = this._offset, limit = this._limit, orderIndex = 0) {
+        const [index, direction] = order[orderIndex];
+        const key = this._columns[index].key;
         let rowLookup = this._index[key];
 
         if (direction === 'desc') {
@@ -67,8 +100,8 @@ Object.assign(Table.prototype, {
                 continue;
             }
 
-            const sortedRows = filteredRows.length > 1 && orderIndex < this._order.length - 1 ?
-                this._getOrderedIndexes(filteredRows, 0, Math.min(filteredRows.length, limit - results.length), orderIndex + 1) :
+            const sortedRows = filteredRows.length > 1 && orderIndex < order.length - 1 ?
+                this._getOrderedIndexes(order, filteredRows, 0, Math.min(filteredRows.length, limit - results.length), orderIndex + 1) :
                 rows;
 
             for (const row of sortedRows) {

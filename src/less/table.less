@@ -1,0 +1,38 @@
+.table-sort {
+    cursor: pointer;
+    padding-right: @spacing * 1.5;
+    position: relative;
+
+    &::before,
+    &::after {
+        position: absolute;
+        display: block;
+        content: "";
+        border-color: transparent;
+        border-style: @border-style;
+    }
+
+    &::before {
+        top: calc(50% - (@border-size * 2));
+        right: @spacing / 2;
+        border-width: 0 .35rem .35rem;
+        border-bottom-color: @border-color;
+        transform: translateY(-100%);
+    }
+
+    &::after {
+        bottom: calc(50% - (@border-size * 2));
+        right: @spacing / 2;
+        border-width: .35rem .35rem 0;
+        border-top-color: @border-color;
+        transform: translateY(100%);
+    }
+}
+
+.table-sort-asc::before {
+    border-bottom-color: @primary;
+}
+
+.table-sort-desc::after {
+    border-top-color: @primary;
+}

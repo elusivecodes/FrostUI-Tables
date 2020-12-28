@@ -25,7 +25,10 @@ Object.assign(Table, {
         const tbody = dom.findOne('thead', element);
         const row = dom.children(tbody, 'tr').shift();
 
-        return dom.children(row, 'th').map(cell => dom.getHTML(cell));
+        return dom.children(row, 'th').map(cell => ({
+            text: dom.getHTML(cell),
+            class: dom.getAttribute(cell, 'class')
+        }));
     }
 
 });

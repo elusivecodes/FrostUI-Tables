@@ -4,35 +4,27 @@
 
 Object.assign(Table.prototype, {
 
+    /**
+     * Render the Table.
+     */
     _render() {
-        this._tfoot = dom.findOne('tfoot', this._node);
-        dom.detach(this._tfoot);
-
+        this._original = dom.clone(this._node);
         dom.empty(this._node);
 
         this._container = dom.create('div', {
-            class: 'position-relative mb-2'
+            class: this.constructor.classes.container
         });
-        dom.before(this._node, this._container);
 
         this._loader = dom.create('div', {
-            class: 'position-absolute top-50 start-50 translate-middle'
+            class: this.constructor.classes.loader
         });
 
         const loaderIcon = dom.create('span', {
-            class: 'spinner-border text-primary'
+            class: this.constructor.classes.loaderIcon
         });
         dom.append(this._loader, loaderIcon);
 
-        const preRow = dom.create('div', {
-            class: 'd-sm-flex justify-content-between mb-2'
-        });
-
-        this._preCol1 = dom.create('div');
-        dom.append(preRow, this._preCol1);
-
-        this._preCol2 = dom.create('div');
-        dom.append(preRow, this._preCol2);
+        dom.addClass(this._node, this.constructor.classes.table);
 
         this._thead = dom.create('thead');
         dom.append(this._node, this._thead);
@@ -40,43 +32,29 @@ Object.assign(Table.prototype, {
         this._tbody = dom.create('tbody');
         dom.append(this._node, this._tbody);
 
-        dom.append(this._node, this._tfoot);
-
-        const postRow = dom.create('div', {
-            class: 'd-sm-flex justify-content-between'
-        });
-
-        this._postCol1 = dom.create('div');
-        dom.append(postRow, this._postCol1);
-
-        this._postCol2 = dom.create('div');
-        dom.append(postRow, this._postCol2);
-
-        const pageContainer = dom.create('div', {
-            class: 'd-flex'
-        });
-        dom.append(this._postCol2, pageContainer);
-
-        this._pagination = dom.create('div', {
-            class: 'pagination pagination-sm mx-auto me-sm-0'
-        });
-        dom.append(pageContainer, this._pagination);
-
-        if (this._settings.searching) {
-            this._renderSearch();
-        }
-
-        if (this._settings.lengthChange) {
-            this._renderLengthSelect();
+        if (dom.findOne('tfoot', this._original)) {
+            this._tfoot = dom.create('tfoot');
+            dom.append(this._node, this._tfoot);
         }
 
         dom.hide(this._loader);
+        dom.after(this._node, this._container);
         dom.append(this._container, this._loader);
-        dom.append(this._container, preRow);
+
+        if (this._settings.layout.top) {
+            this._renderLayoutRow(this._settings.layout.top, this.constructor.classes.topRow);
+        }
+
         dom.append(this._container, this._node);
-        dom.append(this._container, postRow);
+
+        if (this._settings.layout.bottom) {
+            this._renderLayoutRow(this._settings.layout.bottom, this.constructor.classes.bottomRow);
+        }
     },
 
+    /**
+     * Render the table headings.
+     */
     _renderHeadings() {
         dom.empty(this._thead);
 
@@ -88,52 +66,57 @@ Object.assign(Table.prototype, {
             }
 
             const cell = dom.create('th', {
-                class: 'table-heading',
-                html: heading
+                class: this.constructor.classes.tableHeading,
+                html: heading.text
             });
+
+            if (heading.class) {
+                dom.addClass(cell, heading.class);
+            }
+
             dom.append(row, cell);
 
             if (!this._settings.ordering || !this._columns[index].orderable) {
                 continue;
             }
 
-            let sortClass = 'table-sort';
+            const sortClasses = [this.constructor.classes.tableSort];
+
             for (const order of this._order) {
                 if (order[0] != index) {
                     continue;
                 }
 
                 if (order[1] == 'asc') {
-                    sortClass += ' table-sort-asc';
+                    sortClasses.push(this.constructor.classes.tableSortAsc);
                 } else {
-                    sortClass += ' table-sort-desc';
+                    sortClasses.push(this.constructor.classes.tableSortDesc);
                 }
             }
 
-            dom.addClass(cell, sortClass);
+            dom.addClass(cell, sortClasses);
         }
 
         dom.append(this._thead, row);
     },
 
-    _renderInfo(data) {
-        dom.empty(this._postCol1);
-
-        const container = dom.create('div', {
-            class: 'text-center text-sm-start mb-1 mb-sm-0'
-        });
+    /**
+     * Render the table info.
+     */
+    _renderInfo() {
+        dom.empty(this._infoContainer);
 
         const start = this._offset + 1;
-        const end = this._offset + data.results.length;
-        let infoText = data.total < data.filtered ?
+        const end = this._offset + this._results.length;
+        let infoText = this._total < this._filtered ?
             this._settings.lang.infoFiltered :
             this._settings.lang.info;
 
         const replacements = {
             start,
             end,
-            filtered: data.filtered,
-            total: data.total
+            filtered: this._filtered,
+            total: this._total
         };
 
         for (const [key, value] of Object.entries(replacements)) {
@@ -141,29 +124,89 @@ Object.assign(Table.prototype, {
         }
 
         if (this._settings.infoCallback) {
-            infoText = this._settings.infoCallback(start, end, data.total, data.filtered, text);
+            infoText = this._settings.infoCallback(start, end, this._total, this._filtered, text);
         }
 
         const text = dom.create('small', {
             text: infoText
         });
-        dom.append(container, text);
-
-        dom.append(this._postCol1, container);
+        dom.append(this._infoContainer, text);
     },
 
-    _renderLengthSelect() {
+    /**
+     * Render the table info container in a column.
+     * @param {HTMLElement} column The column to render in.
+     */
+    _renderInfoContainer(column) {
+        this._infoContainer = dom.create('div', {
+            class: this.constructor.classes.infoContainer
+        });
+
+        dom.append(column, this._infoContainer);
+    },
+
+    /**
+     * Render a layout row in a container.
+     * @param {Array} elements The elements to render.
+     * @param {string} rowClass The row class.
+     */
+    _renderLayoutRow(elements, rowClass) {
+        const row = dom.create('div', {
+            class: rowClass
+        });
+
+        for (const element of elements) {
+            const column = dom.create('div', {
+                class: this.constructor.classes.column
+            });
+
+            switch (element) {
+                case 'search':
+                    this._renderSearch(column);
+                    break;
+                case 'length':
+                    this._renderLengthSelect(column);
+                    break;
+                case 'info':
+                    this._renderInfoContainer(column);
+                    break;
+                case 'pagination':
+                    this._renderPaginationContainer(column);
+                    break;
+            }
+
+            dom.append(row, column);
+        }
+
+        dom.append(this._container, row);
+    },
+
+    /**
+     * Render the length select in a column.
+     * @param {HTMLElement} column The column to render in.
+     */
+    _renderLengthSelect(column) {
+        if (!this._settings.lengthChange) {
+            return;
+        }
+
         const container = dom.create('div', {
-            class: 'd-flex justify-content-center justify-content-sm-start'
+            class: this.constructor.classes.lengthContainer
         });
 
         const label = dom.create('label', {
-            class: 'mb-1 mb-sm-0'
+            class: this.constructor.classes.lengthLabel
         });
         dom.append(container, label);
 
+        const labelText = dom.create('small', {
+            class: this.constructor.classes.lengthLabelText,
+            text: this._settings.lang.perPage
+        });
+        dom.append(label, labelText);
+
         const inputContainer = dom.create('div', {
-            class: 'form-input d-inline-block',
+            class: this.constructor.classes.lengthInputContainer,
             style: {
                 width: 'initial'
             }
@@ -171,11 +214,10 @@ Object.assign(Table.prototype, {
         dom.append(label, inputContainer);
 
         this._lengthSelect = dom.create('select', {
-            class: 'input-filled input-sm'
+            class: this.constructor.classes.lengthInput
         });
         dom.append(inputContainer, this._lengthSelect);
 
-        // render options
         for (const length of this._settings.lengths) {
             const option = dom.create('option', {
                 value: length,
@@ -190,27 +232,26 @@ Object.assign(Table.prototype, {
         }
 
         const ripple = dom.create('div', {
-            class: 'ripple-line'
+            class: this.constructor.classes.lengthInputRipple
         });
         dom.append(inputContainer, ripple);
 
-        const labelPost = dom.create('small', {
-            class: 'ms-1',
-            text: this._settings.lang.perPage
-        });
-        dom.append(label, labelPost);
-
-        dom.append(this._preCol1, container);
+        dom.append(column, container);
     },
 
+    /**
+     * Render a pagination item.
+     * @param {object} options Options for rendering the pagnination item.
+     * @returns {HTMLElement} The pagnination item.
+     */
     _renderPageItem(options) {
         const container = dom.create('div', {
-            class: 'page-item'
+            class: this.constructor.classes.pageItem
         });
 
         const link = dom.create('button', {
             html: options.text || options.page,
-            class: 'page-link ripple',
+            class: this.constructor.classes.pageLink,
             attributes: {
                 type: 'button'
             }
@@ -218,13 +259,13 @@ Object.assign(Table.prototype, {
         dom.append(container, link);
 
         if (options.disabled) {
-            dom.addClass(container, 'disabled');
+            dom.addClass(container, this.constructor.classes.pageDisabled);
             dom.setAttribute(link, 'aria-disabled', 'true');
             dom.setAttribute(link, 'tabindex', '-1');
         }
 
         if (options.active) {
-            dom.addClass(container, 'active');
+            dom.addClass(container, this.constructor.classes.pageActive);
         }
 
         if (options.page) {
@@ -234,8 +275,11 @@ Object.assign(Table.prototype, {
         return container;
     },
 
-    _renderPagination(data) {
-        const totalPages = Math.ceil(data.filtered / this._limit);
+    /**
+     * Render the pagination.
+     */
+    _renderPagination() {
+        const totalPages = Math.ceil(this._filtered / this._limit);
         const page = 1 + (this._offset / this._limit);
 
         dom.empty(this._pagination);
@@ -292,28 +336,49 @@ Object.assign(Table.prototype, {
         dom.append(this._pagination, last);
     },
 
-    _renderResults(data) {
+    /**
+     * Render the pagination container in a column.
+     * @param {HTMLElement} column The column to render in.
+     */
+    _renderPaginationContainer(column) {
+        const paginationContainer = dom.create('div', {
+            class: this.constructor.classes.paginationContainer
+        });
+        dom.append(column, paginationContainer);
+
+        this._pagination = dom.create('div', {
+            class: this.constructor.classes.pagination
+        });
+        dom.append(paginationContainer, this._pagination);
+    },
+
+    /**
+     * Render the table results.
+     */
+    _renderResults() {
+        dom.triggerEvent(this._node, 'preDraw.ui.table');
+
         dom.empty(this._tbody);
 
         this._renderHeadings();
 
         if (this._settings.headerCallback) {
-            this._settings.headerCallback(this._head, this._data || data.results, this._offset, this._offset + this._limit, data.rowIndexes);
+            this._settings.headerCallback(this._head, this._data, this._offset, this._offset + this._limit, this._rowIndexes);
         }
 
         if (this._settings.paging) {
-            this._renderPagination(data);
+            this._renderPagination();
         }
 
         if (this._settings.info) {
-            this._renderInfo(data);
+            this._renderInfo();
         }
 
-        if (!data.results.length) {
+        if (!this._results.length) {
             const row = dom.create('tr');
 
             const cell = dom.create('td', {
-                class: 'text-center',
+                class: this.constructor.classes.emptyCell,
                 html: this._term ?
                     this._settings.lang.noResults :
                     this._settings.lang.noData,
@@ -325,11 +390,11 @@ Object.assign(Table.prototype, {
 
             dom.append(this._tbody, row);
         } else {
-            for (const [index, result] of data.results.entries()) {
+            for (const [index, result] of this._results.entries()) {
                 const row = this._renderRow(result);
 
                 if (this._settings.rowCallback) {
-                    this._settings.rowCallback(row, result, index, this._offset + index);
+                    this._settings.rowCallback(row, result, index, this._offset + index, this._rowIndexes[index]);
                 }
 
                 dom.append(this._tbody, row);
@@ -345,53 +410,79 @@ Object.assign(Table.prototype, {
         }
 
         if (this._tfoot && this._settings.footerCallback) {
-            this._settings.footerCallback(this._tfoot, this._data || data.results, this._offset, this._offset + this._limit, data.rowIndexes);
+            this._settings.footerCallback(this._tfoot, this._data, this._offset, this._offset + this._limit, this._rowIndexes);
         }
+
+        dom.triggerEvent(this._node, 'draw.ui.table');
     },
 
+    /**
+     * Render a result row.
+     * @param {Array|object} data The row data.
+     * @returns {HTMLElement} The table row.
+     */
     _renderRow(data) {
         const row = dom.create('tr');
 
-        for (const [index, column] of this._columns.entries()) {
+        for (const column of this._columns) {
             if (!column.visible) {
                 continue;
             }
 
-            const key = column.key || index;
-            const value = data[key];
+            const value = data[column.key];
 
             const cell = dom.create('td', {
-                html: value
+                html: column.format ?
+                    column.format(value) :
+                    value
             });
+
+            if (column.class) {
+                dom.addClass(column.class);
+            }
+
             dom.append(row, cell);
         }
 
         return row;
     },
 
-    _renderSearch() {
+    /**
+     * Render the search in a column.
+     * @param {HTMLElement} column The column to render in.
+     */
+    _renderSearch(column) {
+        if (!this._settings.searching) {
+            return;
+        }
+
         const container = dom.create('div', {
-            class: 'form-input mx-auto me-sm-0',
+            class: this.constructor.classes.searchContainer
+        });
+
+        const inputContainer = dom.create('div', {
+            class: this.constructor.classes.searchInputContainer,
             style: {
                 width: '200px'
             }
         });
+        dom.append(container, inputContainer);
 
         this._searchInput = dom.create('input', {
-            class: 'input-filled input-sm',
+            class: this.constructor.classes.searchInput,
             attributes: {
                 type: 'text',
                 placeholder: this._settings.lang.search
             }
         });
-        dom.append(container, this._searchInput);
+        dom.append(inputContainer, this._searchInput);
 
         const ripple = dom.create('div', {
-            class: 'ripple-line'
+            class: this.constructor.classes.searchInputRipple
         });
-        dom.append(container, ripple);
+        dom.append(inputContainer, ripple);
 
-        dom.append(this._preCol2, container);
+        dom.append(column, container);
     }
 
 });

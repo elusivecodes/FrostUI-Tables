@@ -8,15 +8,15 @@ Object.assign(Table.prototype, {
      * Initialize preloaded get data.
      */
     _getDataInit() {
+        this._total = this._data.length;
+
         this._getData = _ => {
+            this.loading();
 
-            const total = this._data.length;
-            let filtered = total;
-
-            let rowIndexes = null;
+            this._rowIndexes = null;
 
             if (this._term) {
-                rowIndexes = [];
+                this._rowIndexes = [];
 
                 const escapedFilter = Core.escapeRegExp(this._term);
                 const regExp = new RegExp(escapedFilter, 'i');
@@ -26,39 +26,41 @@ Object.assign(Table.prototype, {
                 const regExpNormal = new RegExp(escapedNormal, 'i');
 
                 // filter results
-                for (const [rowIndex, result] of this._data.entries()) {
-                    for (const [index, column] of this._columns.entries()) {
+                for (const [index, result] of this._data.entries()) {
+                    for (const column of this._columns) {
                         if (!column.searchable) {
                             continue;
                         }
 
-                        const key = column.key || index;
-
-                        if (regExp.test(result[key]) || regExpNormal.test(result[key])) {
-                            rowIndexes.push(rowIndex);
+                        if (regExp.test(result[column.key]) || regExpNormal.test(result[column.key])) {
+                            this._rowIndexes.push(index);
                         }
                     }
                 }
 
-                filtered = rowIndexes.length;
+                this._filtered = this._rowIndexes.length;
+            } else {
+                this._filtered = this._total;
             }
 
             // order
             if (this._settings.ordering) {
-                rowIndexes = this._getOrderedIndexes(rowIndexes);
+                const order = this._getOrder();
+                this._rowIndexes = this._getOrderedIndexes(order, this._rowIndexes);
             }
 
-            let results = [];
+            this._results = [];
 
-            if (rowIndexes) {
-                for (const rowIndex of rowIndexes) {
-                    results.push(this._data[rowIndex]);
-                }
-            } else {
-                results = this._data.slice(this._offset, this._offset + this._limit);
+            if (!this._rowIndexes) {
+                this._rowIndexes = Core.range(this._offset, this._offset + this._limit);
             }
 
-            this._renderResults({ filtered, results, total, rowIndexes });
+            for (const rowIndex of this._rowIndexes) {
+                this._results.push(this._data[rowIndex]);
+            }
+
+            this._renderResults();
+            this.loading(false);
         };
     },
 
@@ -89,17 +91,24 @@ Object.assign(Table.prototype, {
                 options.limit = this._limit;
             }
 
-            dom.show(this._loader);
+            this.loading();
             const request = this._getResults(options);
 
             request.then(response => {
-                if (this._request === request) {
-                    this._renderResults(response);
+                if (this._request !== request) {
+                    return;
                 }
+
+                this._total = response.total;
+                this._filtered = response.filtered;
+                this._data = this._results = response.results;
+                this._rowIndexes = Core.range(0, this._results.length - 1);
+
+                this._renderResults();
             }).catch(_ => {
                 // error
             }).finally(_ => {
-                dom.hide(this._loader);
+                this.loading(false);
 
                 if (this._request === request) {
                     this._request = null;

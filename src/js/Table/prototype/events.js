@@ -1,27 +1,35 @@
 /**
- * Table Render
+ * Table Events
  */
 
 Object.assign(Table.prototype, {
 
+    /**
+     * Attach events for the Table.
+     */
     _events() {
         if (this._settings.lengthChange) {
-            dom.addEvent(this._lengthSelect, 'change', e => {
+            dom.addEvent(this._lengthSelect, 'change.ui.table', e => {
                 const value = dom.getValue(e.currentTarget);
-                this._limit = value;
-                this._getData();
+                this.length(value);
             });
         }
 
         if (this._settings.searching) {
-            dom.addEvent(this._searchInput, 'input', e => {
-                this._term = dom.getValue(e.currentTarget);
-                this._getData();
+            // debounced search event
+            const searchDebounced = Core.debounce(term => {
+                console.log(term);
+                this.search(term);
+            }, this._settings.debounceInput);
+
+            dom.addEvent(this._searchInput, 'input.ui.table', e => {
+                const value = dom.getValue(e.currentTarget);
+                searchDebounced(value);
             });
         }
 
         if (this._settings.ordering) {
-            dom.addEventDelegate(this._thead, 'click', 'th', e => {
+            dom.addEventDelegate(this._thead, 'click.ui.table', 'th', e => {
                 e.preventDefault();
 
                 const index = dom.index(e.currentTarget);
@@ -49,11 +57,12 @@ Object.assign(Table.prototype, {
                         'asc';
                 }
 
+                let order;
                 if (e.shiftKey) {
                     if (!currentDir) {
-                        this._order.push([index, nextDir]);
+                        order = [...this._order, [index, nextDir]];
                     } else if (currentDir === defaultDir) {
-                        this._order = this._order.map(([col, dir]) => {
+                        order = this._order.map(([col, dir]) => {
                             if (col == index) {
                                 dir = nextDir;
                             }
@@ -61,24 +70,24 @@ Object.assign(Table.prototype, {
                             return [col, dir];
                         });
                     } else {
-                        this._order = this._order.filter(([col]) => {
+                        order = this._order.filter(([col]) => {
                             return col != index;
                         });
                     }
                 } else {
-                    this._order = [[index, nextDir]];
+                    order = [[index, nextDir]];
                 }
 
-                this._getData();
+                this.order(order);
             });
         }
 
         if (this._settings.paging) {
-            dom.addEventDelegate(this._pagination, 'click', '[data-page]', e => {
-                const page = dom.getDataset(e.currentTarget, 'page');
-                this._offset = (page - 1) * this._limit;
+            dom.addEventDelegate(this._pagination, 'click.ui.table', '[data-page]', e => {
+                e.preventDefault();
 
-                this._getData();
+                const page = dom.getDataset(e.currentTarget, 'page');
+                this.page(page);
             });
         }
     }
