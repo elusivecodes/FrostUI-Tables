@@ -106,9 +106,9 @@
         }
 
         /**
-         * Destroy the Table.
+         * Dispose the Table.
          */
-        destroy() {
+        dispose() {
             dom.before(this._container, this._node);
             dom.remove(this._container);
             dom.empty(this._node);
@@ -117,7 +117,26 @@
                 dom.append(this._node, child);
             }
 
-            super.destroy();
+            this._original = null;
+            this._container = null;
+            this._loader = null;
+            this._thead = null;
+            this._tbody = null;
+            this._tfoot = null;
+            this._infoContainer = null;
+            this._pagination = null;
+            this._lengthSelect = null;
+            this._searchInput = null;
+            this._columns = null;
+            this._headings = null;
+            this._order = null;
+            this._data = null;
+            this._index = null;
+            this._filterIndexes = null;
+            this._rowIndexes = null;
+            this._request = null;
+
+            super.dispose();
         }
 
         /**

@@ -1,9 +1,9 @@
 [~] Fix destroy method
 [ ] Finish events
 [ ] Add clear method
-
+[ ] Add tooltips for pagination symbols
 [ ] Check JSDoc comments for options*
-[ ] Rename destroy methods to dispose*
+[ ] Add demos
 
 [ ] Buttons (CSV/Excel/Print)
 [ ] Responsive/Child rows
