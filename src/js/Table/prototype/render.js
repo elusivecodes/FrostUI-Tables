@@ -214,7 +214,9 @@ Object.assign(Table.prototype, {
         dom.append(label, inputContainer);
 
         this._lengthSelect = dom.create('select', {
-            class: this.constructor.classes.lengthInput
+            class: this._settings.inputStyle === 'filled' ?
+                this.constructor.classes.lengthInputFilled :
+                this.constructor.classes.lengthInputOutline
         });
         dom.append(inputContainer, this._lengthSelect);
 
@@ -231,10 +233,12 @@ Object.assign(Table.prototype, {
             dom.append(this._lengthSelect, option);
         }
 
-        const ripple = dom.create('div', {
-            class: this.constructor.classes.lengthInputRipple
-        });
-        dom.append(inputContainer, ripple);
+        if (this._settings.inputStyle === 'filled') {
+            const ripple = dom.create('div', {
+                class: this.constructor.classes.lengthInputRipple
+            });
+            dom.append(inputContainer, ripple);
+        }
 
         dom.append(column, container);
     },
@@ -469,7 +473,9 @@ Object.assign(Table.prototype, {
         dom.append(container, inputContainer);
 
         this._searchInput = dom.create('input', {
-            class: this.constructor.classes.searchInput,
+            class: this._settings.inputStyle === 'filled' ?
+                this.constructor.classes.searchInputFilled :
+                this.constructor.classes.searchInputOutline,
             attributes: {
                 type: 'text',
                 placeholder: this._settings.lang.search
@@ -477,10 +483,12 @@ Object.assign(Table.prototype, {
         });
         dom.append(inputContainer, this._searchInput);
 
-        const ripple = dom.create('div', {
-            class: this.constructor.classes.searchInputRipple
-        });
-        dom.append(inputContainer, ripple);
+        if (this._settings.inputStyle === 'filled') {
+            const ripple = dom.create('div', {
+                class: this.constructor.classes.searchInputRipple
+            });
+            dom.append(inputContainer, ripple);
+        }
 
         dom.append(column, container);
     }

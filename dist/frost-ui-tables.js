@@ -979,7 +979,9 @@
             dom.append(label, inputContainer);
 
             this._lengthSelect = dom.create('select', {
-                class: this.constructor.classes.lengthInput
+                class: this._settings.inputStyle === 'filled' ?
+                    this.constructor.classes.lengthInputFilled :
+                    this.constructor.classes.lengthInputOutline
             });
             dom.append(inputContainer, this._lengthSelect);
 
@@ -996,10 +998,12 @@
                 dom.append(this._lengthSelect, option);
             }
 
-            const ripple = dom.create('div', {
-                class: this.constructor.classes.lengthInputRipple
-            });
-            dom.append(inputContainer, ripple);
+            if (this._settings.inputStyle === 'filled') {
+                const ripple = dom.create('div', {
+                    class: this.constructor.classes.lengthInputRipple
+                });
+                dom.append(inputContainer, ripple);
+            }
 
             dom.append(column, container);
         },
@@ -1234,7 +1238,9 @@
             dom.append(container, inputContainer);
 
             this._searchInput = dom.create('input', {
-                class: this.constructor.classes.searchInput,
+                class: this._settings.inputStyle === 'filled' ?
+                    this.constructor.classes.searchInputFilled :
+                    this.constructor.classes.searchInputOutline,
                 attributes: {
                     type: 'text',
                     placeholder: this._settings.lang.search
@@ -1242,10 +1248,12 @@
             });
             dom.append(inputContainer, this._searchInput);
 
-            const ripple = dom.create('div', {
-                class: this.constructor.classes.searchInputRipple
-            });
-            dom.append(inputContainer, ripple);
+            if (this._settings.inputStyle === 'filled') {
+                const ripple = dom.create('div', {
+                    class: this.constructor.classes.searchInputRipple
+                });
+                dom.append(inputContainer, ripple);
+            }
 
             dom.append(column, container);
         }
@@ -1315,6 +1323,7 @@
                 previous: '&lt;'
             }
         },
+        inputStyle: 'filled',
         createdRow: null,
         drawCallback: null,
         footerCallback: null,
@@ -1342,8 +1351,9 @@
         emptyCell: 'text-center py-3',
         infoContainer: 'text-center text-md-start mb-2 mb-md-0 w-100',
         lengthContainer: 'd-flex justify-content-center justify-content-md-start w-100 mb-1',
-        lengthInput: 'input-filled input-sm',
         lengthInputContainer: 'form-input d-inline-block',
+        lengthInputFilled: 'input-filled input-sm',
+        lengthInputOutline: 'input-outline input-sm',
         lengthInputRipple: 'ripple-line',
         lengthLabel: 'mb-1 mb-md-0',
         lengthLabelText: 'me-2',
@@ -1356,8 +1366,9 @@
         pagination: 'pagination pagination-sm mx-auto me-md-0',
         paginationContainer: 'd-flex w-100',
         searchContainer: 'w-100 mb-1',
-        searchInput: 'input-filled input-sm',
         searchInputContainer: 'form-input mx-auto me-md-0',
+        searchInputFilled: 'input-filled input-sm',
+        searchInputOutline: 'input-outline input-sm',
         searchInputRipple: 'ripple-line',
         table: 'table table-bordered',
         tableHeading: 'fw-bold',
