@@ -107,7 +107,7 @@ Object.assign(Table.prototype, {
             for (const row of sortedRows) {
                 current++;
 
-                if (current < offset) {
+                if (current <= offset) {
                     continue;
                 }
 

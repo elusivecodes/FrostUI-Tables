@@ -25,10 +25,10 @@
         </table>
     </div>
     <script>
-        const data = new Array(100).fill().map((row, index) => [
-            `Row ${index}`,
-            'Test A',
-            'Test B'
+        const data = new Array(999).fill().map((row, index) => [
+            `Row ${index + 1}`,
+            `Test ${index + 1}`,
+            Math.random() * 100
         ]);
         const table = dom.findOne('#table');
         UI.Table.init(table, {

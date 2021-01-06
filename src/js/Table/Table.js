@@ -72,6 +72,8 @@ class Table extends UI.BaseComponent {
         this._render();
         this._events();
 
+        dom.triggerEvent(this._node, 'init.ui.table');
+
         this._getData();
     }
 

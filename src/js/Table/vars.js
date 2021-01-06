@@ -11,18 +11,30 @@ Table.defaults = {
         ]
     },
     lang: {
+
         info: 'Showing results {start} to {end} of {total}',
         infoFiltered: 'Showing results {start} to {end} of {filtered} (filtered from {total} total)',
         noData: 'No data available',
         noResults: 'No results to show',
+        page: 'Page',
         perPage: 'Per Page',
         search: 'Search',
         paginate: {
-            first: '&laquo;',
-            last: '&raquo;',
-            next: '&gt;',
-            previous: '&lt;'
+            first: 'First',
+            last: 'Last',
+            next: 'Next',
+            previous: 'Previous'
+        },
+        aria: {
+            sortAscending: ': activate to sort column ascending',
+            sortDescending: ': activate to sort column descending'
         }
+    },
+    icons: {
+        first: null,
+        last: null,
+        next: '⮞',
+        previous: '⮜'
     },
     inputStyle: 'filled',
     createdRow: null,

@@ -22,6 +22,19 @@ Object.assign(Table.prototype, {
     },
 
     /**
+     * Clear all rows from the data array.
+     * @returns {Table} The Table.
+     */
+    clear() {
+        this._data = [];
+        this._index = [];
+        this._filterIndexes = [];
+        this._rowIndexes = [];
+
+        return this;
+    },
+
+    /**
      * Get values for a single column.
      * @param {string} key The key to retrieve.
      * @returns {Array} The column values.

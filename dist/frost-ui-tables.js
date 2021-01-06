@@ -102,6 +102,8 @@
             this._render();
             this._events();
 
+            dom.triggerEvent(this._node, 'init.ui.table');
+
             this._getData();
         }
 
@@ -310,6 +312,19 @@
             }
 
             this._buildIndex();
+
+            return this;
+        },
+
+        /**
+         * Clear all rows from the data array.
+         * @returns {Table} The Table.
+         */
+        clear() {
+            this._data = [];
+            this._index = [];
+            this._filterIndexes = [];
+            this._rowIndexes = [];
 
             return this;
         },
@@ -631,7 +646,7 @@
                 for (const row of sortedRows) {
                     current++;
 
-                    if (current < offset) {
+                    if (current <= offset) {
                         continue;
                     }
 
@@ -846,20 +861,29 @@
                 }
 
                 const sortClasses = [this.constructor.classes.tableSort];
+                let ariaLabel;
 
                 for (const order of this._order) {
                     if (order[0] != index) {
                         continue;
                     }
 
+                    const text = dom.getText(cell);
+
                     if (order[1] == 'asc') {
                         sortClasses.push(this.constructor.classes.tableSortAsc);
+                        ariaLabel = `${text}${this._settings.lang.aria.sortDescending}`;
                     } else {
                         sortClasses.push(this.constructor.classes.tableSortDesc);
+                        ariaLabel = `${text}${this._settings.lang.aria.sortAscending}`;
                     }
                 }
 
                 dom.addClass(cell, sortClasses);
+
+                if (ariaLabel) {
+                    dom.setAttribute(cell, 'aria-label', ariaLabel);
+                }
             }
 
             dom.append(this._thead, row);
@@ -873,7 +897,7 @@
 
             const start = this._offset + 1;
             const end = this._offset + this._results.length;
-            let infoText = this._total < this._filtered ?
+            let infoText = this._filtered < this._total ?
                 this._settings.lang.infoFiltered :
                 this._settings.lang.info;
 
@@ -1019,10 +1043,13 @@
             });
 
             const link = dom.create('button', {
-                html: options.text || options.page,
+                html: options.icon || options.text || options.page,
                 class: this.constructor.classes.pageLink,
                 attributes: {
-                    type: 'button'
+                    type: 'button',
+                    title: options.text ?
+                        `${options.text} ${this._settings.lang.page}` :
+                        `${this._settings.lang.page} ${options.page}`
                 }
             });
             dom.append(container, link);
@@ -1055,6 +1082,7 @@
 
             const first = this._renderPageItem({
                 text: this._settings.lang.paginate.first,
+                icon: this._settings.icons.first,
                 disabled: page == 1,
                 page: 1
             });
@@ -1062,6 +1090,7 @@
 
             const prev = this._renderPageItem({
                 text: this._settings.lang.paginate.previous,
+                icon: this._settings.icons.previous,
                 disabled: page == 1,
                 page: page > 1 ?
                     page - 1 :
@@ -1090,6 +1119,7 @@
 
             const next = this._renderPageItem({
                 text: this._settings.lang.paginate.next,
+                icon: this._settings.icons.next,
                 disabled: page == totalPages,
                 page: page < totalPages ?
                     page + 1 :
@@ -1099,6 +1129,7 @@
 
             const last = this._renderPageItem({
                 text: this._settings.lang.paginate.last,
+                icon: this._settings.icons.last,
                 disabled: page == totalPages,
                 page: totalPages
             });
@@ -1310,18 +1341,30 @@
             ]
         },
         lang: {
+
             info: 'Showing results {start} to {end} of {total}',
             infoFiltered: 'Showing results {start} to {end} of {filtered} (filtered from {total} total)',
             noData: 'No data available',
             noResults: 'No results to show',
+            page: 'Page',
             perPage: 'Per Page',
             search: 'Search',
             paginate: {
-                first: '&laquo;',
-                last: '&raquo;',
-                next: '&gt;',
-                previous: '&lt;'
+                first: 'First',
+                last: 'Last',
+                next: 'Next',
+                previous: 'Previous'
+            },
+            aria: {
+                sortAscending: ': activate to sort column ascending',
+                sortDescending: ': activate to sort column descending'
             }
+        },
+        icons: {
+            first: null,
+            last: null,
+            next: '⮞',
+            previous: '⮜'
         },
         inputStyle: 'filled',
         createdRow: null,
