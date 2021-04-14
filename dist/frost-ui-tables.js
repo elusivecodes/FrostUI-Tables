@@ -162,6 +162,7 @@
         length(length) {
             if (this._settings.paging) {
                 this._limit = length;
+                this._offset -= (this._offset % this._limit);
 
                 dom.triggerEvent(this._node, 'length.ui.table');
 

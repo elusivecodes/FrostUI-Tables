@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const filepath = require('filepath');
 const terser = require('terser');
-const less = require('less');
+const sass = require('sass');
 const cssmin = require('cssmin');
 
 const srcFolder = 'src';
@@ -70,22 +70,23 @@ if (minified.error) {
 }
 
 // css
-less.render(
-    fs.readFileSync(
-        path.join(srcFolder, 'less/wrapper.less')
-    ).toString(),
-    {
-        optimization: 1,
-        paths: [path.join(srcFolder, 'less/')]
+sass.render({
+    file: path.join(srcFolder, 'scss/table.scss'),
+    includePaths: [path.join(srcFolder, 'scss/')],
+    outputStyle: 'expanded'
+}, (error, result) => {
+    if (error) {
+        console.error(error);
+        return;
     }
-).then(result => {
+
     fs.writeFileSync(
         path.join(distFolder, name + '.css'),
-        result.css
+        result.css.toString()
     );
 
     fs.writeFileSync(
         path.join(distFolder, name + '.min.css'),
-        cssmin(result.css)
+        cssmin(result.css.toString())
     );
-}).catch(console.error);
+});

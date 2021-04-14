@@ -1,0 +1,22 @@
+$spacing: 1rem !default;
+
+// border
+$border-size: 1px !default;
+
+// color
+$black: black !default;
+
+$color-variants: (
+    primary: #2b55d4
+) !default;
+
+$border-color: fade($black, .15) !default;
+
+// table
+$table-border-size: $border-size !default;
+
+$table-sort-size: .35rem !default;
+$table-sort-right: $spacing / 2 !default;
+$table-sort-border-size: $border-size !default;
+$table-sort-border-color: $border-color !default;
+$table-sort-active-border-color: map-get($color-variants, primary) !default;

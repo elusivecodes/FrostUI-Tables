@@ -1,10 +1,9 @@
 .table-sort {
   cursor: pointer;
-  padding-right: 1.5rem;
+  padding-right: 1.7rem !important;
   position: relative;
 }
-.table-sort::before,
-.table-sort::after {
+.table-sort::before, .table-sort::after {
   position: absolute;
   display: block;
   content: "";
@@ -25,9 +24,11 @@
   border-top-color: rgba(0, 0, 0, 0.15);
   transform: translateY(100%);
 }
+
 .table-sort-asc::before {
-  border-bottom-color: royalblue;
+  border-bottom-color: #2b55d4;
 }
+
 .table-sort-desc::after {
-  border-top-color: royalblue;
+  border-top-color: #2b55d4;
 }
