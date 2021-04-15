@@ -1,7 +1,7 @@
 .table-sort {
-  cursor: pointer;
-  padding-right: 1.7rem !important;
   position: relative;
+  padding-right: 1.7rem !important;
+  cursor: pointer;
 }
 .table-sort::before, .table-sort::after {
   position: absolute;
@@ -18,8 +18,8 @@
   transform: translateY(-100%);
 }
 .table-sort::after {
-  bottom: calc(50% - (1px * 2));
   right: 0.5rem;
+  bottom: calc(50% - (1px * 2));
   border-width: 0.35rem 0.35rem 0;
   border-top-color: rgba(0, 0, 0, 0.15);
   transform: translateY(100%);

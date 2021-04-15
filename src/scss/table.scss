@@ -1,10 +1,10 @@
-@import 'functions';
-@import 'vars';
+@import "functions";
+@import "vars";
 
 .table-sort {
-    cursor: pointer;
-    padding-right: ($table-sort-right * 2) + ($table-sort-size * 2) !important;
     position: relative;
+    padding-right: ($table-sort-right * 2) + ($table-sort-size * 2) !important;
+    cursor: pointer;
 
     &::before,
     &::after {
@@ -24,8 +24,8 @@
     }
 
     &::after {
-        bottom: calc(50% - (#{$table-border-size} * 2));
         right: $table-sort-right;
+        bottom: calc(50% - (#{$table-border-size} * 2));
         border-width: $table-sort-size $table-sort-size 0;
         border-top-color: $table-sort-border-color;
         transform: translateY(100%);
