@@ -53,6 +53,39 @@ Object.assign(Table.prototype, {
     },
 
     /**
+     * Render the table buttons.
+     * @param {HTMLElement} container The container to render in.
+     */
+    _renderButtons(container) {
+        const btnGroup = dom.create('div', {
+            class: this.constructor.classes.buttonGroup
+        });
+
+        for (const button of this._settings.buttons) {
+            const btn = dom.create('button', {
+                class: this.constructor.classes.button,
+                text: !button.text && button.type in this._settings.lang.buttons ?
+                    this._settings.lang.buttons[button.type] :
+                    button.text
+            });
+
+            dom.addEvent(btn, 'click.ui.table', e => {
+                e.preventDefault();
+
+                if (button.callback) {
+                    button.callback.bind(this)();
+                } else if (button.type in this.constructor.buttons) {
+                    this.constructor.buttons[button.type].bind(this)(button);
+                }
+            });
+
+            dom.append(btnGroup, btn);
+        }
+
+        dom.append(container, btnGroup);
+    },
+
+    /**
      * Render the table headings.
      */
     _renderHeadings() {
@@ -143,45 +176,56 @@ Object.assign(Table.prototype, {
     },
 
     /**
-     * Render the table info container in a column.
-     * @param {HTMLElement} column The column to render in.
+     * Render the table info container in a container.
+     * @param {HTMLElement} container The container to render in.
      */
-    _renderInfoContainer(column) {
+    _renderInfoContainer(container) {
         this._infoContainer = dom.create('div', {
             class: this.constructor.classes.infoContainer
         });
 
-        dom.append(column, this._infoContainer);
+        dom.append(container, this._infoContainer);
     },
 
     /**
      * Render a layout row in a container.
-     * @param {Array} elements The elements to render.
+     * @param {Array} columns The columns to render.
      * @param {string} rowClass The row class.
      */
-    _renderLayoutRow(elements, rowClass) {
+    _renderLayoutRow(columns, rowClass) {
         const row = dom.create('div', {
             class: rowClass
         });
 
-        for (const element of elements) {
+        for (const elements of columns) {
             const column = dom.create('div', {
                 class: this.constructor.classes.column
             });
 
-            switch (element) {
-                case 'search':
-                    this._renderSearch(column);
-                    break;
-                case 'length':
-                    this._renderLengthSelect(column);
-                    break;
-                case 'info':
-                    this._renderInfoContainer(column);
-                    break;
-                case 'pagination':
-                    this._renderPaginationContainer(column);
-                    break;
+            for (const element of elements) {
+                const container = dom.create('div', {
+                    class: this.constructor.classes.columnContainer
+                });
+
+                switch (element) {
+                    case 'buttons':
+                        this._renderButtons(container);
+                        break;
+                    case 'search':
+                        this._renderSearch(container);
+                        break;
+                    case 'length':
+                        this._renderLengthSelect(container);
+                        break;
+                    case 'info':
+                        this._renderInfoContainer(container);
+                        break;
+                    case 'pagination':
+                        this._renderPaginationContainer(container);
+                        break;
+                }
+
+                dom.append(column, container);
             }
 
             dom.append(row, column);
@@ -191,22 +235,22 @@ Object.assign(Table.prototype, {
     },
 
     /**
-     * Render the length select in a column.
-     * @param {HTMLElement} column The column to render in.
+     * Render the length select in a container.
+     * @param {HTMLElement} container The container to render in.
      */
-    _renderLengthSelect(column) {
+    _renderLengthSelect(container) {
         if (!this._settings.lengthChange) {
             return;
         }
 
-        const container = dom.create('div', {
+        const lengthContainer = dom.create('div', {
             class: this.constructor.classes.lengthContainer
         });
 
         const label = dom.create('label', {
             class: this.constructor.classes.lengthLabel
         });
-        dom.append(container, label);
+        dom.append(lengthContainer, label);
 
         const labelText = dom.create('small', {
             class: this.constructor.classes.lengthLabelText,
@@ -249,7 +293,7 @@ Object.assign(Table.prototype, {
             dom.append(inputContainer, ripple);
         }
 
-        dom.append(column, container);
+        dom.append(container, lengthContainer);
     },
 
     /**
@@ -357,14 +401,14 @@ Object.assign(Table.prototype, {
     },
 
     /**
-     * Render the pagination container in a column.
-     * @param {HTMLElement} column The column to render in.
+     * Render the pagination container in a container.
+     * @param {HTMLElement} container The container to render in.
      */
-    _renderPaginationContainer(column) {
+    _renderPaginationContainer(container) {
         const paginationContainer = dom.create('div', {
             class: this.constructor.classes.paginationContainer
         });
-        dom.append(column, paginationContainer);
+        dom.append(container, paginationContainer);
 
         this._pagination = dom.create('div', {
             class: this.constructor.classes.pagination
@@ -468,15 +512,15 @@ Object.assign(Table.prototype, {
     },
 
     /**
-     * Render the search in a column.
-     * @param {HTMLElement} column The column to render in.
+     * Render the search in a container.
+     * @param {HTMLElement} container The container to render in.
      */
-    _renderSearch(column) {
+    _renderSearch(container) {
         if (!this._settings.searching) {
             return;
         }
 
-        const container = dom.create('div', {
+        const searchContainer = dom.create('div', {
             class: this.constructor.classes.searchContainer
         });
 
@@ -486,7 +530,7 @@ Object.assign(Table.prototype, {
                 width: '200px'
             }
         });
-        dom.append(container, inputContainer);
+        dom.append(searchContainer, inputContainer);
 
         this._searchInput = dom.create('input', {
             class: this._settings.inputStyle === 'filled' ?
@@ -506,7 +550,7 @@ Object.assign(Table.prototype, {
             dom.append(inputContainer, ripple);
         }
 
-        dom.append(column, container);
+        dom.append(container, searchContainer);
     }
 
 });

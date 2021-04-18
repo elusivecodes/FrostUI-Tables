@@ -539,6 +539,112 @@
 
 
     /**
+     * Table Helpers
+     */
+
+    Object.assign(Table.prototype, {
+
+        _buildTable(columns) {
+            const headings = this._getHeadings(columns);
+            const rows = this._getResultRows(columns);
+
+            const table = dom.create('table');
+
+            const thead = dom.create('thead');
+            const tr = dom.create('tr');
+
+            for (const heading of headings) {
+                const th = dom.create('th', {
+                    text: heading
+                });
+                dom.append(tr, th);
+            }
+
+            dom.append(thead, tr);
+            dom.append(table, thead);
+
+            const tbody = dom.create('tbody');
+            for (const row of rows) {
+                const tr = dom.create('tr');
+
+                for (const value of row) {
+                    const td = dom.create('td', {
+                        text: value
+                    });
+                    dom.append(tr, td);
+                }
+
+                dom.append(tbody, tr);
+            }
+
+            dom.append(table, tbody);
+
+            return table;
+        },
+
+        _getHeadings(columns) {
+            const headings = [];
+
+            for (const [index, heading] of this._headings.entries()) {
+                if (!columns.includes(index)) {
+                    continue;
+                }
+
+                headings.push(heading.text);
+            }
+
+            return headings;
+        },
+
+        _getResultRows(columns) {
+            const rows = [];
+
+            for (const result of this._results) {
+                const row = [];
+                for (const [index, column] of this._columns.entries()) {
+                    if (!columns.includes(index)) {
+                        continue;
+                    }
+
+                    const value = result[column.key];
+                    row.push(value);
+                }
+                rows.push(row);
+            }
+
+            return rows;
+        },
+
+        _getVisibleColumns() {
+            const columns = [];
+
+            for (const [index, column] of this._columns.entries()) {
+                if (!column.visible) {
+                    return;
+                }
+
+                columns.push(index);
+            }
+
+            return columns;
+        },
+
+        _saveBlob(blob, filename) {
+            const link = dom.create('a', {
+                attributes: {
+                    href: URL.createObjectURL(blob),
+                    download: filename
+                }
+            });
+            dom.append(document.body, link);
+            dom.click(link);
+            dom.detach(link);
+        }
+
+    });
+
+
+    /**
      * Table Index
      */
 
@@ -834,6 +940,39 @@
         },
 
         /**
+         * Render the table buttons.
+         * @param {HTMLElement} container The container to render in.
+         */
+        _renderButtons(container) {
+            const btnGroup = dom.create('div', {
+                class: this.constructor.classes.buttonGroup
+            });
+
+            for (const button of this._settings.buttons) {
+                const btn = dom.create('button', {
+                    class: this.constructor.classes.button,
+                    text: !button.text && button.type in this._settings.lang.buttons ?
+                        this._settings.lang.buttons[button.type] :
+                        button.text
+                });
+
+                dom.addEvent(btn, 'click.ui.table', e => {
+                    e.preventDefault();
+
+                    if (button.callback) {
+                        button.callback.bind(this)();
+                    } else if (button.type in this.constructor.buttons) {
+                        this.constructor.buttons[button.type].bind(this)(button);
+                    }
+                });
+
+                dom.append(btnGroup, btn);
+            }
+
+            dom.append(container, btnGroup);
+        },
+
+        /**
          * Render the table headings.
          */
         _renderHeadings() {
@@ -924,45 +1063,56 @@
         },
 
         /**
-         * Render the table info container in a column.
-         * @param {HTMLElement} column The column to render in.
+         * Render the table info container in a container.
+         * @param {HTMLElement} container The container to render in.
          */
-        _renderInfoContainer(column) {
+        _renderInfoContainer(container) {
             this._infoContainer = dom.create('div', {
                 class: this.constructor.classes.infoContainer
             });
 
-            dom.append(column, this._infoContainer);
+            dom.append(container, this._infoContainer);
         },
 
         /**
          * Render a layout row in a container.
-         * @param {Array} elements The elements to render.
+         * @param {Array} columns The columns to render.
          * @param {string} rowClass The row class.
          */
-        _renderLayoutRow(elements, rowClass) {
+        _renderLayoutRow(columns, rowClass) {
             const row = dom.create('div', {
                 class: rowClass
             });
 
-            for (const element of elements) {
+            for (const elements of columns) {
                 const column = dom.create('div', {
                     class: this.constructor.classes.column
                 });
 
-                switch (element) {
-                    case 'search':
-                        this._renderSearch(column);
-                        break;
-                    case 'length':
-                        this._renderLengthSelect(column);
-                        break;
-                    case 'info':
-                        this._renderInfoContainer(column);
-                        break;
-                    case 'pagination':
-                        this._renderPaginationContainer(column);
-                        break;
+                for (const element of elements) {
+                    const container = dom.create('div', {
+                        class: this.constructor.classes.columnContainer
+                    });
+
+                    switch (element) {
+                        case 'buttons':
+                            this._renderButtons(container);
+                            break;
+                        case 'search':
+                            this._renderSearch(container);
+                            break;
+                        case 'length':
+                            this._renderLengthSelect(container);
+                            break;
+                        case 'info':
+                            this._renderInfoContainer(container);
+                            break;
+                        case 'pagination':
+                            this._renderPaginationContainer(container);
+                            break;
+                    }
+
+                    dom.append(column, container);
                 }
 
                 dom.append(row, column);
@@ -972,22 +1122,22 @@
         },
 
         /**
-         * Render the length select in a column.
-         * @param {HTMLElement} column The column to render in.
+         * Render the length select in a container.
+         * @param {HTMLElement} container The container to render in.
          */
-        _renderLengthSelect(column) {
+        _renderLengthSelect(container) {
             if (!this._settings.lengthChange) {
                 return;
             }
 
-            const container = dom.create('div', {
+            const lengthContainer = dom.create('div', {
                 class: this.constructor.classes.lengthContainer
             });
 
             const label = dom.create('label', {
                 class: this.constructor.classes.lengthLabel
             });
-            dom.append(container, label);
+            dom.append(lengthContainer, label);
 
             const labelText = dom.create('small', {
                 class: this.constructor.classes.lengthLabelText,
@@ -1030,7 +1180,7 @@
                 dom.append(inputContainer, ripple);
             }
 
-            dom.append(column, container);
+            dom.append(container, lengthContainer);
         },
 
         /**
@@ -1138,14 +1288,14 @@
         },
 
         /**
-         * Render the pagination container in a column.
-         * @param {HTMLElement} column The column to render in.
+         * Render the pagination container in a container.
+         * @param {HTMLElement} container The container to render in.
          */
-        _renderPaginationContainer(column) {
+        _renderPaginationContainer(container) {
             const paginationContainer = dom.create('div', {
                 class: this.constructor.classes.paginationContainer
             });
-            dom.append(column, paginationContainer);
+            dom.append(container, paginationContainer);
 
             this._pagination = dom.create('div', {
                 class: this.constructor.classes.pagination
@@ -1249,15 +1399,15 @@
         },
 
         /**
-         * Render the search in a column.
-         * @param {HTMLElement} column The column to render in.
+         * Render the search in a container.
+         * @param {HTMLElement} container The container to render in.
          */
-        _renderSearch(column) {
+        _renderSearch(container) {
             if (!this._settings.searching) {
                 return;
             }
 
-            const container = dom.create('div', {
+            const searchContainer = dom.create('div', {
                 class: this.constructor.classes.searchContainer
             });
 
@@ -1267,7 +1417,7 @@
                     width: '200px'
                 }
             });
-            dom.append(container, inputContainer);
+            dom.append(searchContainer, inputContainer);
 
             this._searchInput = dom.create('input', {
                 class: this._settings.inputStyle === 'filled' ?
@@ -1287,7 +1437,7 @@
                 dom.append(inputContainer, ripple);
             }
 
-            dom.append(column, container);
+            dom.append(container, searchContainer);
         }
 
     });
@@ -1331,18 +1481,37 @@
 
     // Table default options
     Table.defaults = {
+        buttons: [
+            {
+                type: 'csv'
+            },
+            // {
+            //     type: 'excel'
+            // },
+            // {
+            //     type: 'print'
+            // }
+        ],
         layout: {
             top: [
-                'search',
-                'length'
+                [
+                    'search'
+                ],
+                [
+                    'buttons',
+                    'length'
+                ]
             ],
             bottom: [
-                'info',
-                'pagination'
+                [
+                    'info'
+                ],
+                [
+                    'pagination'
+                ]
             ]
         },
         lang: {
-
             info: 'Showing results {start} to {end} of {total}',
             infoFiltered: 'Showing results {start} to {end} of {filtered} (filtered from {total} total)',
             noData: 'No data available',
@@ -1355,6 +1524,11 @@
                 last: 'Last',
                 next: 'Next',
                 previous: 'Previous'
+            },
+            buttons: {
+                csv: 'CSV',
+                excel: 'Excel',
+                print: 'Print'
             },
             aria: {
                 sortAscending: ': activate to sort column ascending',
@@ -1387,10 +1561,71 @@
         searching: true
     };
 
+    // Default buttons
+    Table.buttons = {
+        csv(button) {
+            if (!button.columns) {
+                button.columns = this._getVisibleColumns();
+            }
+
+            const rows = [
+                this._getHeadings(button.columns),
+                ...this._getResultRows(button.columns)
+            ];
+
+            // build csv data
+            const lines = [];
+
+            for (const row of rows) {
+                const line = row.map(
+                    value => {
+                        value = `${value}`.replace(/"/g, '""');
+
+                        if (value.indexOf(',') >= 0) {
+                            return `"${value}"`;
+                        }
+
+                        return value;
+                    }
+                ).join(',');
+
+                lines.push(line);
+            }
+
+            const blob = new Blob(
+                [
+                    lines.join("\r\n")
+                ],
+                { type: 'text/csv;charset=utf-8;' }
+            );
+
+            this._saveBlob(blob, 'table.csv');
+        },
+        excel(button) {
+            if (!button.columns) {
+                button.columns = this._getVisibleColumns();
+            }
+
+            // not yet implemented
+        },
+        print: button => {
+            if (!button.columns) {
+                button.columns = this._getVisibleColumns();
+            }
+
+            const table = this._buildTable(button.columns);
+
+            // not yet implemented
+        }
+    };
+
     // Default classes
     Table.classes = {
-        bottomRow: 'd-md-flex justify-content-between',
-        column: 'd-flex',
+        bottomRow: 'd-md-flex justify-content-between mx-n2',
+        button: 'btn btn-outline-secondary',
+        buttonGroup: 'btn-group btn-group-sm mt-1',
+        column: 'd-md-flex',
+        columnContainer: 'text-center px-2 mb-1',
         container: 'position-relative mb-2',
         emptyCell: 'text-center py-3',
         infoContainer: 'text-center text-md-start mb-2 mb-md-0 w-100',
@@ -1419,7 +1654,7 @@
         tableSort: 'table-sort',
         tableSortAsc: 'table-sort-asc',
         tableSortDesc: 'table-sort-desc',
-        topRow: 'd-md-flex justify-content-between mb-2'
+        topRow: 'd-md-flex justify-content-between mb-2 mx-n2'
     };
 
     UI.initComponent('table', Table);
