@@ -11,7 +11,6 @@ Table.defaults = {
         ]
     },
     lang: {
-
         info: 'Showing results {start} to {end} of {total}',
         infoFiltered: 'Showing results {start} to {end} of {filtered} (filtered from {total} total)',
         noData: 'No data available',
@@ -31,10 +30,10 @@ Table.defaults = {
         }
     },
     icons: {
-        first: null,
-        last: null,
-        next: '⮞',
-        previous: '⮜'
+        first: '&laquo;',
+        last: '&raquo',
+        next: '&gt;',
+        previous: '&lt;'
     },
     inputStyle: 'filled',
     createdRow: null,

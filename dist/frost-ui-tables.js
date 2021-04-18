@@ -1362,10 +1362,10 @@
             }
         },
         icons: {
-            first: null,
-            last: null,
-            next: '⮞',
-            previous: '⮜'
+            first: '&laquo;',
+            last: '&raquo',
+            next: '&gt;',
+            previous: '&lt;'
         },
         inputStyle: 'filled',
         createdRow: null,
