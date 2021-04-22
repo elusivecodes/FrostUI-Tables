@@ -4,12 +4,12 @@ Table.defaults = {
         {
             type: 'csv'
         },
-        // {
-        //     type: 'excel'
-        // },
-        // {
-        //     type: 'print'
-        // }
+        {
+            type: 'excel'
+        },
+        {
+            type: 'print'
+        }
     ],
     layout: {
         top: [
@@ -78,71 +78,6 @@ Table.defaults = {
     ordering: true,
     paging: true,
     searching: true
-};
-
-// Default buttons
-Table.buttons = {
-    csv(button) {
-        if (!button.columns) {
-            button.columns = this._getVisibleColumns();
-        }
-
-        const rows = [
-            this._getHeadings(button.columns),
-            ...this._getResultRows(button.columns)
-        ];
-
-        // build csv data
-        const lines = [];
-
-        for (const row of rows) {
-            const line = row.map(
-                value => {
-                    value = `${value}`.replace(/"/g, '""');
-
-                    if (value.indexOf(',') >= 0) {
-                        return `"${value}"`;
-                    }
-
-                    return value;
-                }
-            ).join(',');
-
-            lines.push(line);
-        }
-
-        const blob = new Blob(
-            [
-                lines.join("\r\n")
-            ],
-            { type: 'text/csv;charset=utf-8;' }
-        );
-
-        this._saveBlob(blob, 'table.csv');
-    },
-    excel(button) {
-        if (!button.columns) {
-            button.columns = this._getVisibleColumns();
-        }
-
-        // not yet implemented
-    },
-    print: button => {
-        if (!button.columns) {
-            button.columns = this._getVisibleColumns();
-        }
-
-        const table = this._buildTable(button.columns);
-
-        // not yet implemented
-
-        // add classes to table
-        // create document
-        // append styles to document
-        // append table to document
-        // open document in new tab
-        // trigger print
-    }
 };
 
 // Default classes
