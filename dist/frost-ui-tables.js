@@ -43,6 +43,10 @@
         constructor(node, settings) {
             super(node, settings);
 
+            if (settings && settings.layout) {
+                Object.assign(this._settings.layout, settings.layout);
+            }
+
             this._data = [];
 
             this._getData = null;
@@ -94,7 +98,9 @@
             }, 0);
 
             this._offset = 0;
-            this._limit = this._settings.length;
+            this._limit = this._settings.paging ?
+                this._settings.length :
+                Number.INFINITY;
             this._order = this._settings.order.slice();
             this._term = null;
 
@@ -1188,12 +1194,12 @@
                 class: rowClass
             });
 
-            for (const elements of columns) {
+            for (const elements of columns.split(',')) {
                 const column = dom.create('div', {
                     class: this.constructor.classes.column
                 });
 
-                for (const element of elements) {
+                for (const element of elements.split('|')) {
                     const container = dom.create('div', {
                         class: this.constructor.classes.columnContainer
                     });
@@ -1230,7 +1236,7 @@
          * @param {HTMLElement} container The container to render in.
          */
         _renderLengthSelect(container) {
-            if (!this._settings.lengthChange) {
+            if (!this._settings.lengthChange || !this._settings.paging) {
                 return;
             }
 
@@ -1484,7 +1490,7 @@
                     continue;
                 }
 
-                const value = data[column.key];
+                const value = Core.getDot(data, `${column.key}`);
 
                 const cell = dom.create('td', {
                     html: column.format ?
@@ -1585,35 +1591,10 @@
 
     // Table default options
     Table.defaults = {
-        buttons: [
-            {
-                type: 'csv'
-            },
-            {
-                type: 'excel'
-            },
-            {
-                type: 'print'
-            }
-        ],
+        buttons: [],
         layout: {
-            top: [
-                [
-                    'search'
-                ],
-                [
-                    'buttons',
-                    'length'
-                ]
-            ],
-            bottom: [
-                [
-                    'info'
-                ],
-                [
-                    'pagination'
-                ]
-            ]
+            top: 'search,buttons|length',
+            bottom: 'info,pagination'
         },
         lang: {
             info: 'Showing results {start} to {end} of {total}',

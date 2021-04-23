@@ -1,34 +1,9 @@
 // Table default options
 Table.defaults = {
-    buttons: [
-        {
-            type: 'csv'
-        },
-        {
-            type: 'excel'
-        },
-        {
-            type: 'print'
-        }
-    ],
+    buttons: [],
     layout: {
-        top: [
-            [
-                'search'
-            ],
-            [
-                'buttons',
-                'length'
-            ]
-        ],
-        bottom: [
-            [
-                'info'
-            ],
-            [
-                'pagination'
-            ]
-        ]
+        top: 'search,buttons|length',
+        bottom: 'info,pagination'
     },
     lang: {
         info: 'Showing results {start} to {end} of {total}',

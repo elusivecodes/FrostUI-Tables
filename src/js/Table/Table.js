@@ -13,6 +13,10 @@ class Table extends UI.BaseComponent {
     constructor(node, settings) {
         super(node, settings);
 
+        if (settings && settings.layout) {
+            Object.assign(this._settings.layout, settings.layout);
+        }
+
         this._data = [];
 
         this._getData = null;
@@ -64,7 +68,9 @@ class Table extends UI.BaseComponent {
         }, 0);
 
         this._offset = 0;
-        this._limit = this._settings.length;
+        this._limit = this._settings.paging ?
+            this._settings.length :
+            Number.INFINITY;
         this._order = this._settings.order.slice();
         this._term = null;
 

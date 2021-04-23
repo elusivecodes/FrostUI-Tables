@@ -197,12 +197,12 @@ Object.assign(Table.prototype, {
             class: rowClass
         });
 
-        for (const elements of columns) {
+        for (const elements of columns.split(',')) {
             const column = dom.create('div', {
                 class: this.constructor.classes.column
             });
 
-            for (const element of elements) {
+            for (const element of elements.split('|')) {
                 const container = dom.create('div', {
                     class: this.constructor.classes.columnContainer
                 });
@@ -239,7 +239,7 @@ Object.assign(Table.prototype, {
      * @param {HTMLElement} container The container to render in.
      */
     _renderLengthSelect(container) {
-        if (!this._settings.lengthChange) {
+        if (!this._settings.lengthChange || !this._settings.paging) {
             return;
         }
 
@@ -493,7 +493,7 @@ Object.assign(Table.prototype, {
                 continue;
             }
 
-            const value = data[column.key];
+            const value = Core.getDot(data, `${column.key}`);
 
             const cell = dom.create('td', {
                 html: column.format ?
