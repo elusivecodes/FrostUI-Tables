@@ -23,7 +23,7 @@ Object.assign(Table.prototype, {
             const valueLookup = {};
 
             for (const [index, result] of this._data.entries()) {
-                const value = result[column.key];
+                const value = Core.getDot(result, `${column.key}`);
 
                 if (!(value in valueLookup)) {
                     valueLookup[value] = [];

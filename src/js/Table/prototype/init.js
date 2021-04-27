@@ -64,6 +64,12 @@ Object.assign(Table.prototype, {
                 options.limit = this._limit;
             }
 
+            options.columns = this._columns.map(column => ({
+                key: column.key,
+                orderable: column.orderable,
+                searchable: column.searchable
+            }));
+
             this.loading();
             const request = this._getResults(options);
 

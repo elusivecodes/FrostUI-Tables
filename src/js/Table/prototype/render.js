@@ -203,27 +203,15 @@ Object.assign(Table.prototype, {
             });
 
             for (const element of elements.split('|')) {
+                if (!(element in this.constructor.layout)) {
+                    continue;
+                }
+
                 const container = dom.create('div', {
                     class: this.constructor.classes.columnContainer
                 });
 
-                switch (element) {
-                    case 'buttons':
-                        this._renderButtons(container);
-                        break;
-                    case 'search':
-                        this._renderSearch(container);
-                        break;
-                    case 'length':
-                        this._renderLengthSelect(container);
-                        break;
-                    case 'info':
-                        this._renderInfoContainer(container);
-                        break;
-                    case 'pagination':
-                        this._renderPaginationContainer(container);
-                        break;
-                }
+                this.constructor.layout[element].bind(this)(container);
 
                 dom.append(column, container);
             }

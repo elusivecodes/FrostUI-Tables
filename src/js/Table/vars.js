@@ -93,6 +93,25 @@ Table.classes = {
     topRow: 'd-md-flex justify-content-between mb-2 mx-n2'
 };
 
+// Default layout
+Table.layout = {
+    buttons(container) {
+        this._renderButtons(container);
+    },
+    search(container) {
+        this._renderSearch(container);
+    },
+    length(container) {
+        this._renderLengthSelect(container);
+    },
+    info(container) {
+        this._renderInfoContainer(container);
+    },
+    pagination(container) {
+        this._renderPaginationContainer(container);
+    }
+};
+
 UI.initComponent('table', Table);
 
 UI.Table = Table;

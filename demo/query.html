@@ -25,23 +25,77 @@
         </table>
     </div>
     <script>
-        const results = new Array(999).fill().map((row, index) => [
-            `Row ${index + 1}`,
-            `Test ${index + 1}`,
-            (Math.random() * 100).toFixed(4)
-        ]);
+        const compare = (a, b) => {
+            if (Core.isNumeric(a) && Core.isNumeric(b)) {
+                return a - b;
+            }
+
+            const aLower = a.toLowerCase();
+            const bLower = b.toLowerCase();
+            return aLower.localeCompare(bLower);
+        };
+
+        const results = new Array(999).fill().map((row, index) => ({
+            name: `Row ${index + 1}`,
+            data: {
+                test: `Test ${index + 1}`,
+                number: (Math.random() * 100).toFixed(4)
+            }
+        }));
 
         const table = dom.findOne('#table');
         UI.Table.init(table, {
-            getResults: ({ term, order, offset, limit }) => {
+            getResults: ({ columns, term, order, offset, limit }) => {
+                let newResults = results.slice();
+
+                if (term) {
+                    const escapedFilter = Core.escapeRegExp(term);
+                    const regExp = new RegExp(escapedFilter, 'i');
+
+                    newResults = newResults.filter(result => {
+                        for (const column of columns) {
+                            if (!column.searchable) {
+                                continue;
+                            }
+
+                            const value = Core.getDot(result, column.key);
+
+                            if (regExp.test(value)) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    });
+                }
+
+                newResults = newResults.sort((a, b) => {
+                    for (const [col, dir] of order) {
+                        const column = columns[col];
+                        const key = column.key;
+                        const aValue = Core.getDot(a, key);
+                        const bValue = Core.getDot(b, key);
+                        const diff = compare(aValue, bValue);
+
+                        if (diff != 0) {
+                            return dir === 'asc' ? diff : -diff;
+                        }
+                    }
+
+                    return 0;
+                });
+
                 return {
                     total: 999,
-                    filtered: results.length,
-                    results: results.slice(offset, offset + limit)
+                    filtered: newResults.length,
+                    results: newResults.slice(offset, offset + limit)
                 };
             },
-            ordering: false,
-            searching: false
+            columns: [
+                { key: 'name' },
+                { key: 'data.test' },
+                { key: 'data.number' }
+            ]
         });
     </script>
 </body>

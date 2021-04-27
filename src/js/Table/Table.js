@@ -249,7 +249,10 @@ class Table extends UI.BaseComponent {
                             continue;
                         }
 
-                        if (regExp.test(result[column.key])) {
+                        const value = Core.getDot(result, `${column.key}`);
+
+                        if (regExp.test(value)) {
+
                             this._filterIndexes.push(index);
                         }
                     }

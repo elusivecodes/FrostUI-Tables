@@ -66,7 +66,8 @@ Object.assign(Table.prototype, {
                     continue;
                 }
 
-                const value = result[column.key];
+                const value = Core.getDot(result, `${column.key}`);
+
                 row.push(value);
             }
             rows.push(row);

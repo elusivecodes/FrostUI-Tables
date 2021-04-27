@@ -279,7 +279,10 @@
                                 continue;
                             }
 
-                            if (regExp.test(result[column.key])) {
+                            const value = Core.getDot(result, `${column.key}`);
+
+                            if (regExp.test(value)) {
+
                                 this._filterIndexes.push(index);
                             }
                         }
@@ -716,7 +719,8 @@
                         continue;
                     }
 
-                    const value = result[column.key];
+                    const value = Core.getDot(result, `${column.key}`);
+
                     row.push(value);
                 }
                 rows.push(row);
@@ -779,7 +783,7 @@
                 const valueLookup = {};
 
                 for (const [index, result] of this._data.entries()) {
-                    const value = result[column.key];
+                    const value = Core.getDot(result, `${column.key}`);
 
                     if (!(value in valueLookup)) {
                         valueLookup[value] = [];
@@ -946,6 +950,12 @@
                     options.offset = this._offset;
                     options.limit = this._limit;
                 }
+
+                options.columns = this._columns.map(column => ({
+                    key: column.key,
+                    orderable: column.orderable,
+                    searchable: column.searchable
+                }));
 
                 this.loading();
                 const request = this._getResults(options);
@@ -1200,27 +1210,15 @@
                 });
 
                 for (const element of elements.split('|')) {
+                    if (!(element in this.constructor.layout)) {
+                        continue;
+                    }
+
                     const container = dom.create('div', {
                         class: this.constructor.classes.columnContainer
                     });
 
-                    switch (element) {
-                        case 'buttons':
-                            this._renderButtons(container);
-                            break;
-                        case 'search':
-                            this._renderSearch(container);
-                            break;
-                        case 'length':
-                            this._renderLengthSelect(container);
-                            break;
-                        case 'info':
-                            this._renderInfoContainer(container);
-                            break;
-                        case 'pagination':
-                            this._renderPaginationContainer(container);
-                            break;
-                    }
+                    this.constructor.layout[element].bind(this)(container);
 
                     dom.append(column, container);
                 }
@@ -1682,6 +1680,25 @@
         tableSortAsc: 'table-sort-asc',
         tableSortDesc: 'table-sort-desc',
         topRow: 'd-md-flex justify-content-between mb-2 mx-n2'
+    };
+
+    // Default layout
+    Table.layout = {
+        buttons(container) {
+            this._renderButtons(container);
+        },
+        search(container) {
+            this._renderSearch(container);
+        },
+        length(container) {
+            this._renderLengthSelect(container);
+        },
+        info(container) {
+            this._renderInfoContainer(container);
+        },
+        pagination(container) {
+            this._renderPaginationContainer(container);
+        }
     };
 
     UI.initComponent('table', Table);
