@@ -70,9 +70,9 @@
                 }
 
                 newResults = newResults.sort((a, b) => {
-                    for (const [col, dir] of order) {
-                        const column = columns[col];
-                        const key = column.key;
+                    for (const { column, dir } of order) {
+                        const columnData = columns[column];
+                        const key = columnData.key;
                         const aValue = Core.getDot(a, key);
                         const bValue = Core.getDot(b, key);
                         const diff = compare(aValue, bValue);

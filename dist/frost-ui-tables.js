@@ -943,7 +943,7 @@
                 }
 
                 if (this._settings.ordering) {
-                    options.order = this._order;
+                    options.order = this._order.map(([column, dir]) => ({ column, dir }));
                 }
 
                 if (this._settings.paging) {
