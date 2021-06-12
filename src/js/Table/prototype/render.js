@@ -481,7 +481,7 @@ Object.assign(Table.prototype, {
                 continue;
             }
 
-            const value = Core.getDot(data, `${column.key}`);
+            const value = Core.getDot(data, `${column.data}`);
 
             const cell = dom.create('td', {
                 html: column.format ?

@@ -49,9 +49,10 @@ class Table extends UI.BaseComponent {
 
         this._columns = this._columns.map((column, index) => ({
             class: null,
+            data: index,
             dir: 'asc',
             format: null,
-            key: index,
+            name: null,
             orderData: null,
             orderable: true,
             searchable: true,
@@ -249,7 +250,7 @@ class Table extends UI.BaseComponent {
                             continue;
                         }
 
-                        const value = Core.getDot(result, `${column.key}`);
+                        const value = Core.getDot(result, `${column.data}`);
 
                         if (regExp.test(value)) {
 

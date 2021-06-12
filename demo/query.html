@@ -58,7 +58,7 @@
                                 continue;
                             }
 
-                            const value = Core.getDot(result, column.key);
+                            const value = Core.getDot(result, column.data);
 
                             if (regExp.test(value)) {
                                 return true;
@@ -72,9 +72,9 @@
                 newResults = newResults.sort((a, b) => {
                     for (const { column, dir } of order) {
                         const columnData = columns[column];
-                        const key = columnData.key;
-                        const aValue = Core.getDot(a, key);
-                        const bValue = Core.getDot(b, key);
+                        const data = columnData.data;
+                        const aValue = Core.getDot(a, data);
+                        const bValue = Core.getDot(b, data);
                         const diff = compare(aValue, bValue);
 
                         if (diff != 0) {
@@ -92,9 +92,9 @@
                 };
             },
             columns: [
-                { key: 'name' },
-                { key: 'data.test' },
-                { key: 'data.number' }
+                { data: 'name' },
+                { data: 'data.test' },
+                { data: 'data.number' }
             ]
         });
     </script>

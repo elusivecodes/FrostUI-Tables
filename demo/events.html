@@ -13,6 +13,9 @@
 
 <body>
     <div class="container pt-5">
+        <div class="card mb-2">
+            <div class="card-body py-0 px-2 overflow-auto" id="events" style="height: 100px;"></div>
+        </div>
         <table class="table table-bordered table-striped" id="table">
             <thead>
                 <tr>
@@ -25,21 +28,25 @@
         </table>
     </div>
     <script>
-        const data = new Array(99).fill().map((row, index) => ({
-            name: `Row ${index + 1}`,
-            data: {
-                test: `Test ${index + 1}`,
-                number: (Math.random() * 100).toFixed(4)
-            }
-        }));
+        const data = new Array(99).fill().map((row, index) => [
+            `Row ${index + 1}`,
+            `Test ${index + 1}`,
+            (Math.random() * 100).toFixed(4)
+        ]);
         const table = dom.findOne('#table');
+
+        dom.addEvent(table, 'init.ui.table preDraw.ui.table draw.ui.table processing.ui.table processed.ui.table order.ui.table length.ui.table page.ui.table search.ui.table', e => {
+            const div = dom.create('div', {
+                html: `<small>"${e.type}" event triggered</small>`
+            });
+            dom.append(events, div);
+
+            const scrollHeight = dom.height(events, DOM.SCROLL_BOX);
+            dom.setScrollY(events, scrollHeight);
+        });
+
         UI.Table.init(table, {
-            data,
-            columns: [
-                { data: 'name' },
-                { data: 'data.test' },
-                { data: 'data.number' }
-            ]
+            data
         });
     </script>
 </body>

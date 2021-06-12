@@ -18,12 +18,12 @@ Object.assign(Table.prototype, {
                 return false
             }
 
-            this._index[column.key] = [];
+            this._index[column.data] = [];
 
             const valueLookup = {};
 
             for (const [index, result] of this._data.entries()) {
-                const value = Core.getDot(result, `${column.key}`);
+                const value = Core.getDot(result, `${column.data}`);
 
                 if (!(value in valueLookup)) {
                     valueLookup[value] = [];
@@ -43,7 +43,7 @@ Object.assign(Table.prototype, {
             });
 
             for (const value of values) {
-                this._index[column.key].push(valueLookup[value])
+                this._index[column.data].push(valueLookup[value])
             }
         }
     },
@@ -77,7 +77,7 @@ Object.assign(Table.prototype, {
      */
     _getOrderedIndexes(order, onlyRows = null, offset = this._offset, limit = this._limit, orderIndex = 0) {
         const [index, direction] = order[orderIndex];
-        const key = this._columns[index].key;
+        const key = this._columns[index].data;
         let rowLookup = this._index[key];
 
         if (direction === 'desc') {

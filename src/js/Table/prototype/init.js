@@ -32,8 +32,9 @@ Object.assign(Table.prototype, {
                 this._results.push(this._data[rowIndex]);
             }
 
-            this._renderResults();
             this.loading(false);
+
+            this._renderResults();
         };
     },
 
@@ -65,7 +66,8 @@ Object.assign(Table.prototype, {
             }
 
             options.columns = this._columns.map(column => ({
-                key: column.key,
+                data: column.data,
+                name: column.name,
                 orderable: column.orderable,
                 searchable: column.searchable
             }));
@@ -83,12 +85,12 @@ Object.assign(Table.prototype, {
                 this._data = this._results = response.results;
                 this._rowIndexes = Core.range(0, this._results.length - 1);
 
-                this._renderResults();
-            }).catch(_ => {
-                // error
-            }).finally(_ => {
                 this.loading(false);
 
+                this._renderResults();
+            }).catch(_ => {
+                this.loading(false);
+            }).finally(_ => {
                 if (this._request === request) {
                     this._request = null;
                 }

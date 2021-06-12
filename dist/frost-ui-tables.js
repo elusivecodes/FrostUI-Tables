@@ -79,9 +79,10 @@
 
             this._columns = this._columns.map((column, index) => ({
                 class: null,
+                data: index,
                 dir: 'asc',
                 format: null,
-                key: index,
+                name: null,
                 orderData: null,
                 orderable: true,
                 searchable: true,
@@ -279,7 +280,7 @@
                                 continue;
                             }
 
-                            const value = Core.getDot(result, `${column.key}`);
+                            const value = Core.getDot(result, `${column.data}`);
 
                             if (regExp.test(value)) {
 
@@ -719,7 +720,7 @@
                         continue;
                     }
 
-                    const value = Core.getDot(result, `${column.key}`);
+                    const value = Core.getDot(result, `${column.data}`);
 
                     row.push(value);
                 }
@@ -778,12 +779,12 @@
                     return false
                 }
 
-                this._index[column.key] = [];
+                this._index[column.data] = [];
 
                 const valueLookup = {};
 
                 for (const [index, result] of this._data.entries()) {
-                    const value = Core.getDot(result, `${column.key}`);
+                    const value = Core.getDot(result, `${column.data}`);
 
                     if (!(value in valueLookup)) {
                         valueLookup[value] = [];
@@ -803,7 +804,7 @@
                 });
 
                 for (const value of values) {
-                    this._index[column.key].push(valueLookup[value])
+                    this._index[column.data].push(valueLookup[value])
                 }
             }
         },
@@ -837,7 +838,7 @@
          */
         _getOrderedIndexes(order, onlyRows = null, offset = this._offset, limit = this._limit, orderIndex = 0) {
             const [index, direction] = order[orderIndex];
-            const key = this._columns[index].key;
+            const key = this._columns[index].data;
             let rowLookup = this._index[key];
 
             if (direction === 'desc') {
@@ -919,8 +920,9 @@
                     this._results.push(this._data[rowIndex]);
                 }
 
-                this._renderResults();
                 this.loading(false);
+
+                this._renderResults();
             };
         },
 
@@ -952,7 +954,8 @@
                 }
 
                 options.columns = this._columns.map(column => ({
-                    key: column.key,
+                    data: column.data,
+                    name: column.name,
                     orderable: column.orderable,
                     searchable: column.searchable
                 }));
@@ -970,12 +973,12 @@
                     this._data = this._results = response.results;
                     this._rowIndexes = Core.range(0, this._results.length - 1);
 
-                    this._renderResults();
-                }).catch(_ => {
-                    // error
-                }).finally(_ => {
                     this.loading(false);
 
+                    this._renderResults();
+                }).catch(_ => {
+                    this.loading(false);
+                }).finally(_ => {
                     if (this._request === request) {
                         this._request = null;
                     }
@@ -1488,7 +1491,7 @@
                     continue;
                 }
 
-                const value = Core.getDot(data, `${column.key}`);
+                const value = Core.getDot(data, `${column.data}`);
 
                 const cell = dom.create('td', {
                     html: column.format ?
