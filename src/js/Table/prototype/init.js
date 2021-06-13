@@ -66,7 +66,6 @@ Object.assign(Table.prototype, {
             }
 
             options.columns = this._columns.map(column => ({
-                data: column.data,
                 name: column.name,
                 orderable: column.orderable,
                 searchable: column.searchable

@@ -1,15 +1,39 @@
 {
     "name": "frostui-tables",
     "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
+    "description": "FrostUI-Tables is a free, open-source Tables component for Javascript.",
+    "keywords": [
+        "ui",
+        "component",
+        "tables",
+        "front-end",
+        "web"
+    ],
+    "homepage": "https://github.com/elusivecodes/FrostUI-Tables",
+    "bugs": {
+        "url": "https://github.com/elusivecodes/FrostUI-Tables/issues",
+        "email": "elusivecodes@gmail.com"
+    },
+    "main": "./dist/frost-ui-tables.js",
+    "files": [
+        "/dist/frost-ui-tables.css",
+        "/dist/frost-ui-tables.js",
+        "/src/scss",
+        "/LICENSE",
+        "/README.md"
+    ],
     "scripts": {
         "build": "node build.js",
         "test": "echo \"Error: no test specified\" && exit 1",
         "lint": "stylelint \"src/scss/**/*.scss\" --fix"
     },
-    "author": "",
-    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/elusivecodes/FrostUI-Tables.git"
+    },
+    "author": "Elusive",
+    "license": "MIT",
+    "private": false,
     "devDependencies": {
         "cssnano": "^5.0.6",
         "filepath": "^1.1.0",
