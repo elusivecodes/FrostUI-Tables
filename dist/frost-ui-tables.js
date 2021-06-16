@@ -1,5 +1,5 @@
 /**
- * FrostUI-Tables v1.0
+ * FrostUI-Tables v1.0.1
  * https://github.com/elusivecodes/FrostUI-Tables
  */
 (function(global, factory) {
@@ -955,6 +955,7 @@
 
                 options.columns = this._columns.map(column => ({
                     name: column.name,
+                    data: column.data,
                     orderable: column.orderable,
                     searchable: column.searchable
                 }));
