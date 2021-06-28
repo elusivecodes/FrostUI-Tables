@@ -16,7 +16,7 @@ $border-color: fade($black, .15) !default;
 $table-border-size: $border-size !default;
 
 $table-sort-size: .35rem !default;
-$table-sort-right: $spacing / 2 !default;
+$table-sort-right: $spacing * .5 !default;
 $table-sort-border-size: $border-size !default;
 $table-sort-border-color: $border-color !default;
 $table-sort-active-border-color: map-get($color-variants, primary) !default;
