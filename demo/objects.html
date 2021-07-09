@@ -32,7 +32,9 @@
                 number: (Math.random() * 100).toFixed(4)
             }
         }));
+
         const table = dom.findOne('#table');
+
         UI.Table.init(table, {
             data,
             columns: [

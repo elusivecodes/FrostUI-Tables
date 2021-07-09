@@ -33,6 +33,7 @@
             `Test ${index + 1}`,
             (Math.random() * 100).toFixed(4)
         ]);
+
         const table = dom.findOne('#table');
 
         dom.addEvent(table, 'init.ui.table preDraw.ui.table draw.ui.table processing.ui.table processed.ui.table order.ui.table length.ui.table page.ui.table search.ui.table', e => {

@@ -13,7 +13,7 @@
 
 <body>
     <div class="container pt-5">
-        <table class="table table-bordered table-striped" id="table">
+        <table class="table table-bordered table-striped" id="table" data-ui-ordering="false">
             <thead>
                 <tr>
                     <th>Heading</th>
@@ -30,9 +30,10 @@
             `Test ${index + 1}`,
             (Math.random() * 100).toFixed(4)
         ]);
+
         const table = dom.findOne('#table');
+
         UI.Table.init(table, {
-            ordering: false,
             data
         });
     </script>

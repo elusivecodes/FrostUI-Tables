@@ -30,11 +30,14 @@
             `Test ${index + 1}`,
             (Math.random() * 100).toFixed(4)
         ]);
-        const table = dom.findOne('#table');
+
         const formatter = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD'
         });
+
+        const table = dom.findOne('#table');
+
         UI.Table.init(table, {
             data,
             columns: [

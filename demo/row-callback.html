@@ -30,7 +30,9 @@
             `Test ${index + 1}`,
             (Math.random() * 100).toFixed(4)
         ]);
+
         const table = dom.findOne('#table');
+
         UI.Table.init(table, {
             data,
             rowCallback: (row, data) => {

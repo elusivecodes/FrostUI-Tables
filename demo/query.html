@@ -44,6 +44,7 @@
         }));
 
         const table = dom.findOne('#table');
+
         UI.Table.init(table, {
             getResults: ({ columns, term, order, offset, limit }) => {
                 let newResults = results.slice();
