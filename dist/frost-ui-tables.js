@@ -1,5 +1,5 @@
 /**
- * FrostUI-Tables v1.0.4
+ * FrostUI-Tables v1.0.5
  * https://github.com/elusivecodes/FrostUI-Tables
  */
 (function(global, factory) {
@@ -23,7 +23,6 @@
     }
 
     const Core = window.Core;
-    const DOM = window.DOM;
     const dom = window.dom;
     const UI = window.UI;
     const document = window.document;
