@@ -4,16 +4,17 @@
 
 Object.assign(Table.prototype, {
 
+    /**
+     * Render a table for specific columns.
+     * @param {array} columns The columns to render.
+     * @returns {HTMLElement} The table element.
+     */
     _buildTable(columns) {
-        const headings = this._getHeadings(columns);
-        const rows = this._getResultRows(columns);
-
         const table = dom.create('table');
-
         const thead = dom.create('thead');
         const tr = dom.create('tr');
 
-        for (const heading of headings) {
+        for (const heading of this._getHeadings(columns)) {
             const th = dom.create('th', {
                 text: heading
             });
@@ -24,7 +25,7 @@ Object.assign(Table.prototype, {
         dom.append(table, thead);
 
         const tbody = dom.create('tbody');
-        for (const row of rows) {
+        for (const row of this._getResultRows(columns)) {
             const tr = dom.create('tr');
 
             for (const value of row) {
@@ -42,6 +43,11 @@ Object.assign(Table.prototype, {
         return table;
     },
 
+    /**
+     * Get headings for specific columns.
+     * @param {array} columns The columns to get.
+     * @returns {array} The headings.
+     */
     _getHeadings(columns) {
         const headings = [];
 
@@ -56,6 +62,23 @@ Object.assign(Table.prototype, {
         return headings;
     },
 
+    /**
+     * Get an index (optionally modified).
+     * @param {number} index The index to get.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
+     * @returns {number} The index.
+     */
+    _getIndex(index, modified = true) {
+        return modified ?
+            this._rowIndexes[index] :
+            index;
+    },
+
+    /**
+     * Get results for specific columns.
+     * @param {array} columns The columns to get.
+     * @returns {array} The results.
+     */
     _getResultRows(columns) {
         const rows = [];
 
@@ -76,6 +99,10 @@ Object.assign(Table.prototype, {
         return rows;
     },
 
+    /**
+     * Get the visible columns.
+     * @returns {array} The visible columns.
+     */
     _getVisibleColumns() {
         const columns = [];
 
@@ -90,6 +117,22 @@ Object.assign(Table.prototype, {
         return columns;
     },
 
+    /**
+     * Refresh the results.
+     */
+    _refreshResults() {
+        if (this._getResults) {
+            this._results = this._data;
+        } else {
+            this._results = this._rowIndexes.map(rowIndex => this._data[rowIndex]);
+        }
+    },
+
+    /**
+     * Download a blob.
+     * @param {Blob} blob The blob to save.
+     * @param {string} filename The filename.
+     */
     _saveBlob(blob, filename) {
         const link = dom.create('a', {
             attributes: {

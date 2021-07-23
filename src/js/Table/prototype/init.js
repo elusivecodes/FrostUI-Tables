@@ -22,18 +22,12 @@ Object.assign(Table.prototype, {
                 this._rowIndexes = this._getOrderedIndexes(order, this._rowIndexes);
             }
 
-            this._results = [];
-
             if (!this._rowIndexes) {
                 this._rowIndexes = Core.range(this._offset, this._offset + this._limit);
             }
 
-            for (const rowIndex of this._rowIndexes) {
-                this._results.push(this._data[rowIndex]);
-            }
-
             this.loading(false);
-
+            this._refreshResults();
             this._renderResults();
         };
     },
@@ -82,11 +76,12 @@ Object.assign(Table.prototype, {
 
                 this._total = response.total;
                 this._filtered = response.filtered;
-                this._data = this._results = response.results;
+                this._data = response.results;
+
+                this._refreshResults();
                 this._rowIndexes = Core.range(0, this._results.length - 1);
 
                 this.loading(false);
-
                 this._renderResults();
             }).catch(_ => {
                 this.loading(false);

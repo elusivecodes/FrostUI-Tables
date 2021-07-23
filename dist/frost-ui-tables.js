@@ -1,5 +1,5 @@
 /**
- * FrostUI-Tables v1.0.8
+ * FrostUI-Tables v1.1.0
  * https://github.com/elusivecodes/FrostUI-Tables
  */
 (function(global, factory) {
@@ -142,7 +142,10 @@
             this._index = null;
             this._filterIndexes = null;
             this._rowIndexes = null;
+            this._results = null;
             this._request = null;
+            this._getData = null;
+            this._getResults = null;
 
             super.dispose();
         }
@@ -153,7 +156,7 @@
          */
         info() {
             return {
-                end: this._offset + this._limit,
+                end: this._offset + this._results.length,
                 filtered: this._filtered,
                 start: this._offset,
                 total: this._total
@@ -166,14 +169,16 @@
          * @returns {Table} The Table.
          */
         length(length) {
-            if (this._settings.paging) {
-                this._limit = length;
-                this._offset -= (this._offset % this._limit);
-
-                dom.triggerEvent(this._node, 'length.ui.table');
-
-                this._getData();
+            if (!this._settings.paging) {
+                return this;
             }
+
+            this._limit = length;
+            this._offset -= (this._offset % this._limit);
+
+            dom.triggerEvent(this._node, 'length.ui.table');
+
+            this._getData();
 
             return this;
         }
@@ -201,13 +206,15 @@
          * @returns {Table} The Table.
          */
         order(order) {
-            if (this._settings.ordering) {
-                this._order = order;
-
-                dom.triggerEvent(this._node, 'order.ui.table');
-
-                this._getData();
+            if (!this._settings.ordering) {
+                return this;
             }
+
+            this._order = order;
+
+            dom.triggerEvent(this._node, 'order.ui.table');
+
+            this._getData();
 
             return this;
         }
@@ -218,13 +225,15 @@
          * @returns {Table} The Table.
          */
         page(page) {
-            if (this._settings.paging) {
-                this._offset = (page - 1) * this._limit;
-
-                dom.triggerEvent(this._node, 'page.ui.table');
-
-                this._getData();
+            if (!this._settings.paging) {
+                return this;
             }
+
+            this._offset = (page - 1) * this._limit;
+
+            dom.triggerEvent(this._node, 'page.ui.table');
+
+            this._getData();
 
             return this;
         }
@@ -260,42 +269,49 @@
          * @returns {Table} The table.
          */
         search(term) {
-            if (this._settings.searching) {
-                dom.setValue(this._searchInput, term);
-                this._term = term;
+            if (!this._settings.searching) {
+                return this;
+            }
 
-                dom.triggerEvent(this._node, 'search.ui.table');
+            dom.setValue(this._searchInput, term);
+            this._term = term;
 
-                if (this._term) {
-                    this._filterIndexes = [];
+            dom.triggerEvent(this._node, 'search.ui.table');
 
-                    const escapedFilter = Core.escapeRegExp(this._term);
-                    const regExp = new RegExp(escapedFilter, 'i');
+            if (this._getResults) {
+                this._getData();
 
-                    // filter results
-                    for (const [index, result] of this._data.entries()) {
-                        for (const column of this._columns) {
-                            if (!column.searchable) {
-                                continue;
-                            }
+                return this;
+            }
 
-                            const value = Core.getDot(result, `${column.data}`);
+            if (this._term) {
+                this._filterIndexes = [];
 
-                            if (regExp.test(value)) {
+                const escapedFilter = Core.escapeRegExp(this._term);
+                const regExp = new RegExp(escapedFilter, 'i');
 
-                                this._filterIndexes.push(index);
-                            }
+                // filter results
+                for (const [index, result] of this._data.entries()) {
+                    for (const column of this._columns) {
+                        if (!column.searchable) {
+                            continue;
+                        }
+
+                        const value = Core.getDot(result, `${column.data}`);
+
+                        if (regExp.test(value)) {
+                            this._filterIndexes.push(index);
                         }
                     }
-
-                    this._filtered = this._filterIndexes.length;
-                } else {
-                    this._filterIndexes = null;
-                    this._filtered = this._total;
                 }
 
-                this._getData();
+                this._filtered = this._filterIndexes.length;
+            } else {
+                this._filterIndexes = null;
+                this._filtered = this._total;
             }
+
+            this._getData();
 
             return this;
         }
@@ -420,12 +436,19 @@
          */
         addRow(row) {
             this._data.push(row);
-
-            if (this._getResults) {
-                this._rowIndexes.push(this._data.length - 1);
-            }
-
             this._buildIndex();
+
+            this._total++;
+            this._filtered++;
+
+            if (!this._getResults) {
+                this._getData();
+            } else {
+                this._rowIndexes.push(this._data.length - 1);
+
+                this._refreshResults();
+                this._renderResults();
+            }
 
             return this;
         },
@@ -437,8 +460,18 @@
         clear() {
             this._data = [];
             this._index = [];
-            this._filterIndexes = [];
+            this._filterIndexes = null;
             this._rowIndexes = [];
+            this._results = [];
+            this._offset = 0;
+            this._total = 0;
+            this._filtered = 0;
+
+            if (this._settings.searching) {
+                dom.setValue(this._searchInput, '');
+            }
+
+            this._renderResults();
 
             return this;
         },
@@ -446,29 +479,40 @@
         /**
          * Get values for a single column.
          * @param {string} key The key to retrieve.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
          * @returns {Array} The column values.
          */
-        getColumn(key) {
-            return this._data.map(row => Core.getDot(row, key));
+        getColumn(key, modified = true) {
+            return modified ?
+                this._rowIndexes.map(rowIndex => Core.getDot(this._data[rowIndex], `${key}`)) :
+                this._data.map(row => Core.getDot(row, `${key}`));
         },
 
         /**
          * Get values for a single row.
          * @param {number} index The row index to retrieve.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
          * @returns {Array} The row values.
          */
-        getRow(index) {
-            return this._data[index];
+        getRow(index, modified = true) {
+            const rowIndex = this._getIndex(index, modified);
+
+            return Core.isPlainObject(this._data[rowIndex]) ?
+                { ...this._data[rowIndex] } :
+                [...this._data[rowIndex]];
         },
 
         /**
          * Get a single value from a row.
          * @param {number} index The row index to retrieve.
          * @param {string} key The key to retrieve.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
          * @returns {*} The value.
          */
-        getValue(index, key) {
-            return Core.getDot(this._data[index], key);
+        getValue(index, key, modified = true) {
+            const rowIndex = this._getIndex(index, modified);
+
+            return Core.getDot(this._data[rowIndex], `${key}`);
         },
 
         /**
@@ -479,16 +523,21 @@
         hideColumn(index) {
             this._columns[index].visible = false;
 
+            this._renderResults();
+
             return this;
         },
 
         /**
          * Remove a row from the data array.
          * @param {number} index The row index to remove.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
          * @returns {Table} The Table.
          */
-        removeRow(index) {
-            this._data = this._data.filter((_, rowIndex) => rowIndex !== index);
+        removeRow(index, modified = true) {
+            const rowIndex = this._getIndex(index, modified);
+
+            this._data = this._data.filter((_, dataIndex) => dataIndex !== rowIndex);
 
             this._buildIndex();
 
@@ -499,15 +548,25 @@
          * Set values for a single column.
          * @param {string} key The key to set.
          * @param {Array} column The column values.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
          * @returns {Table} The Table.
          */
-        setColumn(key, column) {
+        setColumn(key, column, modified = true) {
             this._data = this._data.map((row, index) => {
-                Core.setDot(row, key, column[index]);
+                const dataIndex = modified ?
+                    this._rowIndexes.indexOf(index) :
+                    index;
+
+                if (dataIndex >= 0) {
+                    Core.setDot(row, `${key}`, column[dataIndex]);
+                }
+
                 return row;
             });
 
             this._buildIndex();
+            this._refreshResults();
+            this._renderResults();
 
             return this;
         },
@@ -516,12 +575,17 @@
          * Set values for a single row.
          * @param {number} index The row index to set.
          * @param {Array|object} row The row values.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
          * @returns {Table} The Table.
          */
-        setRow(index, row) {
-            this._data[index] = row;
+        setRow(index, row, modified = true) {
+            const rowIndex = this._getIndex(index, modified);
+
+            this._data[rowIndex] = row;
 
             this._buildIndex();
+            this._refreshResults();
+            this._renderResults();
 
             return this;
         },
@@ -531,12 +595,17 @@
          * @param {number} index The row index to set.
          * @param {string} key The key to set.
          * @param {*} value The value to set.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
          * @returns {Table} The Table.
          */
-        setValue(index, key, value) {
-            Core.setDot(this._data[index], key, value);
+        setValue(index, key, value, modified = true) {
+            const rowIndex = this._getIndex(index, modified);
+
+            Core.setDot(this._data[rowIndex], `${key}`, value);
 
             this._buildIndex();
+            this._refreshResults();
+            this._renderResults();
 
             return this;
         },
@@ -548,6 +617,8 @@
          */
         showColumn(index) {
             this._columns[index].visible = true;
+
+            this._renderResults();
 
             return this;
         }
@@ -657,16 +728,17 @@
 
     Object.assign(Table.prototype, {
 
+        /**
+         * Render a table for specific columns.
+         * @param {array} columns The columns to render.
+         * @returns {HTMLElement} The table element.
+         */
         _buildTable(columns) {
-            const headings = this._getHeadings(columns);
-            const rows = this._getResultRows(columns);
-
             const table = dom.create('table');
-
             const thead = dom.create('thead');
             const tr = dom.create('tr');
 
-            for (const heading of headings) {
+            for (const heading of this._getHeadings(columns)) {
                 const th = dom.create('th', {
                     text: heading
                 });
@@ -677,7 +749,7 @@
             dom.append(table, thead);
 
             const tbody = dom.create('tbody');
-            for (const row of rows) {
+            for (const row of this._getResultRows(columns)) {
                 const tr = dom.create('tr');
 
                 for (const value of row) {
@@ -695,6 +767,11 @@
             return table;
         },
 
+        /**
+         * Get headings for specific columns.
+         * @param {array} columns The columns to get.
+         * @returns {array} The headings.
+         */
         _getHeadings(columns) {
             const headings = [];
 
@@ -709,6 +786,23 @@
             return headings;
         },
 
+        /**
+         * Get an index (optionally modified).
+         * @param {number} index The index to get.
+         * @param {Boolean} [modified=true] Whether to use modified indexes.
+         * @returns {number} The index.
+         */
+        _getIndex(index, modified = true) {
+            return modified ?
+                this._rowIndexes[index] :
+                index;
+        },
+
+        /**
+         * Get results for specific columns.
+         * @param {array} columns The columns to get.
+         * @returns {array} The results.
+         */
         _getResultRows(columns) {
             const rows = [];
 
@@ -729,6 +823,10 @@
             return rows;
         },
 
+        /**
+         * Get the visible columns.
+         * @returns {array} The visible columns.
+         */
         _getVisibleColumns() {
             const columns = [];
 
@@ -743,6 +841,22 @@
             return columns;
         },
 
+        /**
+         * Refresh the results.
+         */
+        _refreshResults() {
+            if (this._getResults) {
+                this._results = this._data;
+            } else {
+                this._results = this._rowIndexes.map(rowIndex => this._data[rowIndex]);
+            }
+        },
+
+        /**
+         * Download a blob.
+         * @param {Blob} blob The blob to save.
+         * @param {string} filename The filename.
+         */
         _saveBlob(blob, filename) {
             const link = dom.create('a', {
                 attributes: {
@@ -909,18 +1023,12 @@
                     this._rowIndexes = this._getOrderedIndexes(order, this._rowIndexes);
                 }
 
-                this._results = [];
-
                 if (!this._rowIndexes) {
                     this._rowIndexes = Core.range(this._offset, this._offset + this._limit);
                 }
 
-                for (const rowIndex of this._rowIndexes) {
-                    this._results.push(this._data[rowIndex]);
-                }
-
                 this.loading(false);
-
+                this._refreshResults();
                 this._renderResults();
             };
         },
@@ -969,11 +1077,12 @@
 
                     this._total = response.total;
                     this._filtered = response.filtered;
-                    this._data = this._results = response.results;
+                    this._data = response.results;
+
+                    this._refreshResults();
                     this._rowIndexes = Core.range(0, this._results.length - 1);
 
                     this.loading(false);
-
                     this._renderResults();
                 }).catch(_ => {
                     this.loading(false);

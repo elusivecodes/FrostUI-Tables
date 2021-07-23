@@ -113,7 +113,10 @@ class Table extends UI.BaseComponent {
         this._index = null;
         this._filterIndexes = null;
         this._rowIndexes = null;
+        this._results = null;
         this._request = null;
+        this._getData = null;
+        this._getResults = null;
 
         super.dispose();
     }
@@ -124,7 +127,7 @@ class Table extends UI.BaseComponent {
      */
     info() {
         return {
-            end: this._offset + this._limit,
+            end: this._offset + this._results.length,
             filtered: this._filtered,
             start: this._offset,
             total: this._total
@@ -137,14 +140,16 @@ class Table extends UI.BaseComponent {
      * @returns {Table} The Table.
      */
     length(length) {
-        if (this._settings.paging) {
-            this._limit = length;
-            this._offset -= (this._offset % this._limit);
-
-            dom.triggerEvent(this._node, 'length.ui.table');
-
-            this._getData();
+        if (!this._settings.paging) {
+            return this;
         }
+
+        this._limit = length;
+        this._offset -= (this._offset % this._limit);
+
+        dom.triggerEvent(this._node, 'length.ui.table');
+
+        this._getData();
 
         return this;
     }
@@ -172,13 +177,15 @@ class Table extends UI.BaseComponent {
      * @returns {Table} The Table.
      */
     order(order) {
-        if (this._settings.ordering) {
-            this._order = order;
-
-            dom.triggerEvent(this._node, 'order.ui.table');
-
-            this._getData();
+        if (!this._settings.ordering) {
+            return this;
         }
+
+        this._order = order;
+
+        dom.triggerEvent(this._node, 'order.ui.table');
+
+        this._getData();
 
         return this;
     }
@@ -189,13 +196,15 @@ class Table extends UI.BaseComponent {
      * @returns {Table} The Table.
      */
     page(page) {
-        if (this._settings.paging) {
-            this._offset = (page - 1) * this._limit;
-
-            dom.triggerEvent(this._node, 'page.ui.table');
-
-            this._getData();
+        if (!this._settings.paging) {
+            return this;
         }
+
+        this._offset = (page - 1) * this._limit;
+
+        dom.triggerEvent(this._node, 'page.ui.table');
+
+        this._getData();
 
         return this;
     }
@@ -231,42 +240,49 @@ class Table extends UI.BaseComponent {
      * @returns {Table} The table.
      */
     search(term) {
-        if (this._settings.searching) {
-            dom.setValue(this._searchInput, term);
-            this._term = term;
+        if (!this._settings.searching) {
+            return this;
+        }
 
-            dom.triggerEvent(this._node, 'search.ui.table');
+        dom.setValue(this._searchInput, term);
+        this._term = term;
 
-            if (this._term) {
-                this._filterIndexes = [];
+        dom.triggerEvent(this._node, 'search.ui.table');
 
-                const escapedFilter = Core.escapeRegExp(this._term);
-                const regExp = new RegExp(escapedFilter, 'i');
+        if (this._getResults) {
+            this._getData();
 
-                // filter results
-                for (const [index, result] of this._data.entries()) {
-                    for (const column of this._columns) {
-                        if (!column.searchable) {
-                            continue;
-                        }
+            return this;
+        }
 
-                        const value = Core.getDot(result, `${column.data}`);
+        if (this._term) {
+            this._filterIndexes = [];
 
-                        if (regExp.test(value)) {
+            const escapedFilter = Core.escapeRegExp(this._term);
+            const regExp = new RegExp(escapedFilter, 'i');
 
-                            this._filterIndexes.push(index);
-                        }
+            // filter results
+            for (const [index, result] of this._data.entries()) {
+                for (const column of this._columns) {
+                    if (!column.searchable) {
+                        continue;
+                    }
+
+                    const value = Core.getDot(result, `${column.data}`);
+
+                    if (regExp.test(value)) {
+                        this._filterIndexes.push(index);
                     }
                 }
-
-                this._filtered = this._filterIndexes.length;
-            } else {
-                this._filterIndexes = null;
-                this._filtered = this._total;
             }
 
-            this._getData();
+            this._filtered = this._filterIndexes.length;
+        } else {
+            this._filterIndexes = null;
+            this._filtered = this._total;
         }
+
+        this._getData();
 
         return this;
     }

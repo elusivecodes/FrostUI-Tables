@@ -11,12 +11,19 @@ Object.assign(Table.prototype, {
      */
     addRow(row) {
         this._data.push(row);
-
-        if (this._getResults) {
-            this._rowIndexes.push(this._data.length - 1);
-        }
-
         this._buildIndex();
+
+        this._total++;
+        this._filtered++;
+
+        if (!this._getResults) {
+            this._getData();
+        } else {
+            this._rowIndexes.push(this._data.length - 1);
+
+            this._refreshResults();
+            this._renderResults();
+        }
 
         return this;
     },
@@ -28,8 +35,18 @@ Object.assign(Table.prototype, {
     clear() {
         this._data = [];
         this._index = [];
-        this._filterIndexes = [];
+        this._filterIndexes = null;
         this._rowIndexes = [];
+        this._results = [];
+        this._offset = 0;
+        this._total = 0;
+        this._filtered = 0;
+
+        if (this._settings.searching) {
+            dom.setValue(this._searchInput, '');
+        }
+
+        this._renderResults();
 
         return this;
     },
@@ -37,29 +54,40 @@ Object.assign(Table.prototype, {
     /**
      * Get values for a single column.
      * @param {string} key The key to retrieve.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
      * @returns {Array} The column values.
      */
-    getColumn(key) {
-        return this._data.map(row => Core.getDot(row, key));
+    getColumn(key, modified = true) {
+        return modified ?
+            this._rowIndexes.map(rowIndex => Core.getDot(this._data[rowIndex], `${key}`)) :
+            this._data.map(row => Core.getDot(row, `${key}`));
     },
 
     /**
      * Get values for a single row.
      * @param {number} index The row index to retrieve.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
      * @returns {Array} The row values.
      */
-    getRow(index) {
-        return this._data[index];
+    getRow(index, modified = true) {
+        const rowIndex = this._getIndex(index, modified);
+
+        return Core.isPlainObject(this._data[rowIndex]) ?
+            { ...this._data[rowIndex] } :
+            [...this._data[rowIndex]];
     },
 
     /**
      * Get a single value from a row.
      * @param {number} index The row index to retrieve.
      * @param {string} key The key to retrieve.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
      * @returns {*} The value.
      */
-    getValue(index, key) {
-        return Core.getDot(this._data[index], key);
+    getValue(index, key, modified = true) {
+        const rowIndex = this._getIndex(index, modified);
+
+        return Core.getDot(this._data[rowIndex], `${key}`);
     },
 
     /**
@@ -70,16 +98,21 @@ Object.assign(Table.prototype, {
     hideColumn(index) {
         this._columns[index].visible = false;
 
+        this._renderResults();
+
         return this;
     },
 
     /**
      * Remove a row from the data array.
      * @param {number} index The row index to remove.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
      * @returns {Table} The Table.
      */
-    removeRow(index) {
-        this._data = this._data.filter((_, rowIndex) => rowIndex !== index);
+    removeRow(index, modified = true) {
+        const rowIndex = this._getIndex(index, modified);
+
+        this._data = this._data.filter((_, dataIndex) => dataIndex !== rowIndex);
 
         this._buildIndex();
 
@@ -90,15 +123,25 @@ Object.assign(Table.prototype, {
      * Set values for a single column.
      * @param {string} key The key to set.
      * @param {Array} column The column values.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
      * @returns {Table} The Table.
      */
-    setColumn(key, column) {
+    setColumn(key, column, modified = true) {
         this._data = this._data.map((row, index) => {
-            Core.setDot(row, key, column[index]);
+            const dataIndex = modified ?
+                this._rowIndexes.indexOf(index) :
+                index;
+
+            if (dataIndex >= 0) {
+                Core.setDot(row, `${key}`, column[dataIndex]);
+            }
+
             return row;
         });
 
         this._buildIndex();
+        this._refreshResults();
+        this._renderResults();
 
         return this;
     },
@@ -107,12 +150,17 @@ Object.assign(Table.prototype, {
      * Set values for a single row.
      * @param {number} index The row index to set.
      * @param {Array|object} row The row values.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
      * @returns {Table} The Table.
      */
-    setRow(index, row) {
-        this._data[index] = row;
+    setRow(index, row, modified = true) {
+        const rowIndex = this._getIndex(index, modified);
+
+        this._data[rowIndex] = row;
 
         this._buildIndex();
+        this._refreshResults();
+        this._renderResults();
 
         return this;
     },
@@ -122,12 +170,17 @@ Object.assign(Table.prototype, {
      * @param {number} index The row index to set.
      * @param {string} key The key to set.
      * @param {*} value The value to set.
+     * @param {Boolean} [modified=true] Whether to use modified indexes.
      * @returns {Table} The Table.
      */
-    setValue(index, key, value) {
-        Core.setDot(this._data[index], key, value);
+    setValue(index, key, value, modified = true) {
+        const rowIndex = this._getIndex(index, modified);
+
+        Core.setDot(this._data[rowIndex], `${key}`, value);
 
         this._buildIndex();
+        this._refreshResults();
+        this._renderResults();
 
         return this;
     },
@@ -139,6 +192,8 @@ Object.assign(Table.prototype, {
      */
     showColumn(index) {
         this._columns[index].visible = true;
+
+        this._renderResults();
 
         return this;
     }

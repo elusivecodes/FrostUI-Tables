@@ -75,24 +75,110 @@
             </tbody>
         </table>
         <div class="mt-1">
-            <button class="btn btn-danger ripple mb-0" id="tableDisposeBtn" type="button">Dispose</button>
-            <button class="btn btn-primary ripple mb-0" id="tableInitBtn" type="button">Init</button>
+            <div class="btn-group">
+                <button class="btn btn-primary ripple mb-0" id="tableInit" type="button">Init</button>
+                <button class="btn btn-danger ripple mb-0" id="tableDispose" type="button">Dispose</button>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-success ripple mb-0" id="tableShowColumn" type="button">Show Column (1)</button>
+                <button class="btn btn-warning ripple mb-0" id="tableHideColumn" type="button">Hide Column (1)</button>
+            </div>
+            <button class="btn btn-dark ripple mb-0" id="tableClear" type="button">Clear</button>
         </div>
+        <div class="mt-1">
+            <button class="btn btn-secondary ripple mb-0" id="tableInfo" type="button">Info</button>
+            <button class="btn btn-secondary ripple mb-0" id="tableGetRow" type="button">Get Row (0)</button>
+            <button class="btn btn-secondary ripple mb-0" id="tableGetColumn" type="button">Get Column (2)</button>
+            <button class="btn btn-secondary ripple mb-0" id="tableGetValue" type="button">Get Value (0, 2)</button>
+        </div>
+        <div class="mt-1">
+            <button class="btn btn-secondary ripple mb-0" id="tableAddRow" type="button">Add Row</button>
+            <button class="btn btn-secondary ripple mb-0" id="tableSetRow" type="button">Set Row (0)</button>
+            <button class="btn btn-secondary ripple mb-0" id="tableSetColumn" type="button">Set Column (2)</button>
+            <button class="btn btn-secondary ripple mb-0" id="tableSetValue" type="button">Set Value (0, 2)</button>
+        </div>
+        <samp id="output"></samp>
     </div>
     <script>
         const table = dom.findOne('#table');
-        const tableDisposeBtn = dom.findOne('#tableDisposeBtn');
-        const tableInitBtn = dom.findOne('#tableInitBtn');
+        const tableInit = dom.findOne('#tableInit');
+        const tableDispose = dom.findOne('#tableDispose');
+        const tableShowColumn = dom.findOne('#tableShowColumn');
+        const tableHideColumn = dom.findOne('#tableHideColumn');
+        const tableClear = dom.findOne('#tableClear');
+        const tableInfo = dom.findOne('#tableInfo');
+        const tableGetRow = dom.findOne('#tableGetRow');
+        const tableGetColumn = dom.findOne('#tableGetColumn');
+        const tableGetValue = dom.findOne('#tableGetValue');
+        const tableAddRow = dom.findOne('#tableAddRow');
+        const tableSetRow = dom.findOne('#tableSetRow');
+        const tableSetColumn = dom.findOne('#tableSetColumn');
+        const tableSetValue = dom.findOne('#tableSetValue');
+        const output = dom.findOne('#output');
 
-        UI.Table.init(table);
+        dom.addEvent(tableInit, 'click', e => {
+            UI.Table.init(table);
+        });
 
-        dom.addEvent(tableDisposeBtn, 'click', e => {
+        dom.addEvent(tableDispose, 'click', e => {
             UI.Table.init(table).dispose();
         });
 
-        dom.addEvent(tableInitBtn, 'click', e => {
-            UI.Table.init(table);
+        dom.addEvent(tableShowColumn, 'click', e => {
+            UI.Table.init(table).showColumn(1);
         });
+
+        dom.addEvent(tableHideColumn, 'click', e => {
+            UI.Table.init(table).hideColumn(1);
+        });
+
+        dom.addEvent(tableClear, 'click', e => {
+            UI.Table.init(table).clear();
+        });
+
+        dom.addEvent(tableInfo, 'click', e => {
+            const info = UI.Table.init(table).info();
+            dom.setText(output, `Info: ${JSON.stringify(info)}`);
+        });
+
+        dom.addEvent(tableGetRow, 'click', e => {
+            const row = UI.Table.init(table).getRow(0);
+            dom.setText(output, `Row: ${JSON.stringify(row)}`);
+        });
+
+        dom.addEvent(tableGetColumn, 'click', e => {
+            const column = UI.Table.init(table).getColumn(2);
+            dom.setText(output, `Column: ${JSON.stringify(column)}`);
+        });
+
+        dom.addEvent(tableGetValue, 'click', e => {
+            const value = UI.Table.init(table).getValue(0, 2);
+            dom.setText(output, `Value: ${value}`);
+        });
+
+        const getValue = _ => (Math.random() * 100).toFixed(4);
+
+        dom.addEvent(tableAddRow, 'click', e => {
+            const row = ['Row', 'Test', getValue()];
+            UI.Table.init(table).addRow(row);
+        });
+
+        dom.addEvent(tableSetRow, 'click', e => {
+            const row = ['Row', 'Test', getValue()];
+            UI.Table.init(table).setRow(0, row);
+        });
+
+        dom.addEvent(tableSetColumn, 'click', e => {
+            const info = UI.Table.init(table).info();
+            const column = (new Array(info.filtered)).fill().map(_ => getValue());
+            UI.Table.init(table).setColumn(2, column);
+        });
+
+        dom.addEvent(tableSetValue, 'click', e => {
+            UI.Table.init(table).setValue(0, 2, getValue());
+        });
+
+        dom.triggerEvent(tableInit, 'click');
     </script>
 </body>
 
