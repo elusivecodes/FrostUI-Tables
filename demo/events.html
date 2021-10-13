@@ -35,6 +35,7 @@
         ]);
 
         const table = dom.findOne('#table');
+        const events = dom.findOne('#events');
 
         dom.addEvent(table, 'init.ui.table preDraw.ui.table draw.ui.table processing.ui.table processed.ui.table order.ui.table length.ui.table page.ui.table search.ui.table', e => {
             const div = dom.create('div', {
