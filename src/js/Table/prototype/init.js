@@ -51,7 +51,9 @@ Object.assign(Table.prototype, {
             }
 
             if (this._settings.ordering) {
-                options.order = this._order.map(([column, dir]) => ({ column, dir }));
+                options.order = {
+                    ...this._order.map(([column, dir]) => ({ column, dir }))
+                };
             }
 
             if (this._settings.paging) {
@@ -59,12 +61,14 @@ Object.assign(Table.prototype, {
                 options.limit = this._limit;
             }
 
-            options.columns = this._columns.map(column => ({
-                name: column.name,
-                data: column.data,
-                orderable: column.orderable,
-                searchable: column.searchable
-            }));
+            options.columns = {
+                ...this._columns.map(column => ({
+                    name: column.name,
+                    data: column.data,
+                    orderable: column.orderable,
+                    searchable: column.searchable
+                }))
+            };
 
             this.loading();
             const request = this._getResults(options);

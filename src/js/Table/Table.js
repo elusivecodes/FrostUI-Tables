@@ -57,6 +57,7 @@ class Table extends UI.BaseComponent {
             orderable: true,
             searchable: true,
             visible: true,
+            createdCell: null,
             ...column
         }));
 

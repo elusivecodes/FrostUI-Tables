@@ -54,7 +54,7 @@
                     const regExp = new RegExp(escapedFilter, 'i');
 
                     newResults = newResults.filter(result => {
-                        for (const column of columns) {
+                        for (const [i, column] of Object.entries(columns)) {
                             if (!column.searchable) {
                                 continue;
                             }
@@ -71,7 +71,7 @@
                 }
 
                 newResults = newResults.sort((a, b) => {
-                    for (const { column, dir } of order) {
+                    for (const [i, { column, dir }] of Object.entries(order)) {
                         const columnData = columns[column];
                         const key = columnData.data;
                         const aValue = Core.getDot(a, key);

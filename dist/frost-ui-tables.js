@@ -1,5 +1,5 @@
 /**
- * FrostUI-Tables v1.1.5
+ * FrostUI-Tables v1.1.6
  * https://github.com/elusivecodes/FrostUI-Tables
  */
 (function(global, factory) {
@@ -86,6 +86,7 @@
                 orderable: true,
                 searchable: true,
                 visible: true,
+                createdCell: null,
                 ...column
             }));
 
@@ -1052,7 +1053,9 @@
                 }
 
                 if (this._settings.ordering) {
-                    options.order = this._order.map(([column, dir]) => ({ column, dir }));
+                    options.order = {
+                        ...this._order.map(([column, dir]) => ({ column, dir }))
+                    };
                 }
 
                 if (this._settings.paging) {
@@ -1060,12 +1063,14 @@
                     options.limit = this._limit;
                 }
 
-                options.columns = this._columns.map(column => ({
-                    name: column.name,
-                    data: column.data,
-                    orderable: column.orderable,
-                    searchable: column.searchable
-                }));
+                options.columns = {
+                    ...this._columns.map(column => ({
+                        name: column.name,
+                        data: column.data,
+                        orderable: column.orderable,
+                        searchable: column.searchable
+                    }))
+                };
 
                 this.loading();
                 const request = this._getResults(options);
@@ -1445,7 +1450,7 @@
          * Render the pagination.
          */
         _renderPagination() {
-            const totalPages = Math.ceil(this._filtered / this._limit);
+            const totalPages = Math.ceil(this._filtered / this._limit) || 1;
             const page = 1 + (this._offset / this._limit);
 
             dom.empty(this._pagination);
@@ -1561,7 +1566,7 @@
                 dom.append(this._tbody, row);
             } else {
                 for (const [index, result] of this._results.entries()) {
-                    const row = this._renderRow(result);
+                    const row = this._renderRow(result, index);
 
                     if (this._settings.rowCallback) {
                         this._settings.rowCallback(row, result, index, this._offset + index, this._rowIndexes[index]);
@@ -1589,12 +1594,13 @@
         /**
          * Render a result row.
          * @param {Array|object} data The row data.
+         * @param {number} rowIndex The row index.
          * @returns {HTMLElement} The table row.
          */
-        _renderRow(data) {
+        _renderRow(data, rowIndex) {
             const row = dom.create('tr');
 
-            for (const column of this._columns) {
+            for (const [index, column] of this._columns.entries()) {
                 if (!column.visible) {
                     continue;
                 }
@@ -1609,6 +1615,10 @@
 
                 if (column.class) {
                     dom.addClass(column.class);
+                }
+
+                if (column.createdCell) {
+                    column.createdCell(cell, value, data, rowIndex, index);
                 }
 
                 dom.append(row, cell);
