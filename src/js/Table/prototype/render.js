@@ -45,7 +45,12 @@ Object.assign(Table.prototype, {
             this._renderLayoutRow(this._settings.layout.top, this.constructor.classes.topRow);
         }
 
-        dom.append(this._container, this._node);
+        const tableContainer = dom.create('div', {
+            class: this.constructor.classes.tableContainer
+        });
+
+        dom.append(tableContainer, this._node);
+        dom.append(this._container, tableContainer);
 
         if (this._settings.layout.bottom) {
             this._renderLayoutRow(this._settings.layout.bottom, this.constructor.classes.bottomRow);

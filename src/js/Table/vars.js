@@ -86,6 +86,7 @@ Table.classes = {
     searchInputOutline: 'input-outline input-sm',
     searchInputRipple: 'ripple-line',
     table: 'table table-bordered',
+    tableContainer: 'table-responsive',
     tableHeading: 'fw-bold',
     tableSort: 'table-sort',
     tableSortAsc: 'table-sort-asc',
