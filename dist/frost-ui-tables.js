@@ -1,5 +1,5 @@
 /**
- * FrostUI-Tables v1.1.7
+ * FrostUI-Tables v1.1.8
  * https://github.com/elusivecodes/FrostUI-Tables
  */
 (function(global, factory) {
@@ -47,6 +47,9 @@
             }
 
             this._data = [];
+            this._results = [];
+            this._filtered = 0;
+            this._total = 0;
 
             this._getData = null;
             this._getResults = null;

@@ -18,6 +18,9 @@ class Table extends UI.BaseComponent {
         }
 
         this._data = [];
+        this._results = [];
+        this._filtered = 0;
+        this._total = 0;
 
         this._getData = null;
         this._getResults = null;
