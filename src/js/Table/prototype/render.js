@@ -535,7 +535,7 @@ Object.assign(Table.prototype, {
                 this.constructor.classes.searchInputFilled :
                 this.constructor.classes.searchInputOutline,
             attributes: {
-                type: 'text',
+                type: 'search',
                 placeholder: this._settings.lang.search
             }
         });

@@ -1,5 +1,5 @@
 /**
- * FrostUI-Tables v1.1.8
+ * FrostUI-Tables v1.1.9
  * https://github.com/elusivecodes/FrostUI-Tables
  */
 (function(global, factory) {
@@ -1661,7 +1661,7 @@
                     this.constructor.classes.searchInputFilled :
                     this.constructor.classes.searchInputOutline,
                 attributes: {
-                    type: 'text',
+                    type: 'search',
                     placeholder: this._settings.lang.search
                 }
             });
