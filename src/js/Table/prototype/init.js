@@ -62,12 +62,20 @@ Object.assign(Table.prototype, {
             }
 
             options.columns = {
-                ...this._columns.map(column => ({
-                    name: column.name,
-                    data: column.data,
-                    orderable: column.orderable,
-                    searchable: column.searchable
-                }))
+                ...this._columns.map(column => {
+                    const data = {};
+
+                    if (column.name) {
+                        data.name = column.name;
+                    }
+
+                    return {
+                        ...data,
+                        data: column.data,
+                        orderable: column.orderable,
+                        searchable: column.searchable
+                    };
+                })
             };
 
             this.loading();

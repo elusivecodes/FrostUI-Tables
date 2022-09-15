@@ -1,5 +1,5 @@
 /**
- * FrostUI-Tables v1.1.9
+ * FrostUI-Tables v1.1.10
  * https://github.com/elusivecodes/FrostUI-Tables
  */
 (function(global, factory) {
