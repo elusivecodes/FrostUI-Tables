@@ -1,22 +1,12 @@
-$spacing: 1rem !default;
-
-// border
-$border-size: 1px !default;
-
-// color
-$black: #000 !default;
-
-$color-variants: (
-    primary: #2b55d4
-) !default;
-
-$border-color: fade($black, .15) !default;
-
-// table
-$table-border-size: $border-size !default;
+$table-border-width: var(--ui-border-width) !default;
 
 $table-sort-size: .35rem !default;
-$table-sort-right: $spacing * .5 !default;
-$table-sort-border-size: $border-size !default;
-$table-sort-border-color: $border-color !default;
-$table-sort-active-border-color: map-get($color-variants, primary) !default;
+$table-sort-right: .5rem !default;
+$table-sort-border-color: var(--ui-border-color-translucent) !default;
+$table-sort-active-border-color: var(--ui-primary) !default;
+
+$btn-table-color: var(--ui-secondary-color) !default;
+$btn-table-border-color: var(--ui-secondary-color) !default;
+$btn-table-hover-bg: rgba(var(--ui-secondary-color-rgb), .2) !default;
+$btn-table-ripple-bg: rgba(var(--ui-secondary-color-rgb), var(--ui-ripple-opacity)) !default;
+$btn-table-focus-shadow-rgb: var(--ui-secondary-color-rgb) !default;

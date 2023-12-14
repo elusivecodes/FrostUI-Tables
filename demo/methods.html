@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FrostUI Tables Methods</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/elusivecodes/frostui@1.4.6/dist/frost-ui.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/elusivecodes/frostui@latest/dist/frost-ui.css">
     <link rel="stylesheet" href="../dist/frost-ui-tables.css">
-    <script src="https://cdn.jsdelivr.net/gh/elusivecodes/frostui@1.4.6/dist/frost-ui-bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/elusivecodes/frostui@latest/dist/frost-ui-bundle.js"></script>
     <script src="../dist/frost-ui-tables.js"></script>
 </head>
 
@@ -100,85 +100,85 @@
         <samp id="output"></samp>
     </div>
     <script>
-        const table = dom.findOne('#table');
-        const tableInit = dom.findOne('#tableInit');
-        const tableDispose = dom.findOne('#tableDispose');
-        const tableShowColumn = dom.findOne('#tableShowColumn');
-        const tableHideColumn = dom.findOne('#tableHideColumn');
-        const tableClear = dom.findOne('#tableClear');
-        const tableInfo = dom.findOne('#tableInfo');
-        const tableGetRow = dom.findOne('#tableGetRow');
-        const tableGetColumn = dom.findOne('#tableGetColumn');
-        const tableGetValue = dom.findOne('#tableGetValue');
-        const tableAddRow = dom.findOne('#tableAddRow');
-        const tableSetRow = dom.findOne('#tableSetRow');
-        const tableSetColumn = dom.findOne('#tableSetColumn');
-        const tableSetValue = dom.findOne('#tableSetValue');
-        const output = dom.findOne('#output');
+        const table = $.findOne('#table');
+        const tableInit = $.findOne('#tableInit');
+        const tableDispose = $.findOne('#tableDispose');
+        const tableShowColumn = $.findOne('#tableShowColumn');
+        const tableHideColumn = $.findOne('#tableHideColumn');
+        const tableClear = $.findOne('#tableClear');
+        const tableInfo = $.findOne('#tableInfo');
+        const tableGetRow = $.findOne('#tableGetRow');
+        const tableGetColumn = $.findOne('#tableGetColumn');
+        const tableGetValue = $.findOne('#tableGetValue');
+        const tableAddRow = $.findOne('#tableAddRow');
+        const tableSetRow = $.findOne('#tableSetRow');
+        const tableSetColumn = $.findOne('#tableSetColumn');
+        const tableSetValue = $.findOne('#tableSetValue');
+        const output = $.findOne('#output');
 
-        dom.addEvent(tableInit, 'click', e => {
+        $.addEvent(tableInit, 'click', e => {
             UI.Table.init(table);
         });
 
-        dom.addEvent(tableDispose, 'click', e => {
+        $.addEvent(tableDispose, 'click', e => {
             UI.Table.init(table).dispose();
         });
 
-        dom.addEvent(tableShowColumn, 'click', e => {
+        $.addEvent(tableShowColumn, 'click', e => {
             UI.Table.init(table).showColumn(1);
         });
 
-        dom.addEvent(tableHideColumn, 'click', e => {
+        $.addEvent(tableHideColumn, 'click', e => {
             UI.Table.init(table).hideColumn(1);
         });
 
-        dom.addEvent(tableClear, 'click', e => {
+        $.addEvent(tableClear, 'click', e => {
             UI.Table.init(table).clear();
         });
 
-        dom.addEvent(tableInfo, 'click', e => {
+        $.addEvent(tableInfo, 'click', e => {
             const info = UI.Table.init(table).info();
-            dom.setText(output, `Info: ${JSON.stringify(info)}`);
+            $.setText(output, `Info: ${JSON.stringify(info)}`);
         });
 
-        dom.addEvent(tableGetRow, 'click', e => {
+        $.addEvent(tableGetRow, 'click', e => {
             const row = UI.Table.init(table).getRow(0);
-            dom.setText(output, `Row: ${JSON.stringify(row)}`);
+            $.setText(output, `Row: ${JSON.stringify(row)}`);
         });
 
-        dom.addEvent(tableGetColumn, 'click', e => {
+        $.addEvent(tableGetColumn, 'click', e => {
             const column = UI.Table.init(table).getColumn(2);
-            dom.setText(output, `Column: ${JSON.stringify(column)}`);
+            $.setText(output, `Column: ${JSON.stringify(column)}`);
         });
 
-        dom.addEvent(tableGetValue, 'click', e => {
+        $.addEvent(tableGetValue, 'click', e => {
             const value = UI.Table.init(table).getValue(0, 2);
-            dom.setText(output, `Value: ${value}`);
+            $.setText(output, `Value: ${value}`);
         });
 
         const getValue = _ => (Math.random() * 100).toFixed(4);
 
-        dom.addEvent(tableAddRow, 'click', e => {
+        $.addEvent(tableAddRow, 'click', e => {
             const row = ['Row', 'Test', getValue()];
             UI.Table.init(table).addRow(row);
         });
 
-        dom.addEvent(tableSetRow, 'click', e => {
+        $.addEvent(tableSetRow, 'click', e => {
             const row = ['Row', 'Test', getValue()];
             UI.Table.init(table).setRow(0, row);
         });
 
-        dom.addEvent(tableSetColumn, 'click', e => {
+        $.addEvent(tableSetColumn, 'click', e => {
             const info = UI.Table.init(table).info();
             const column = (new Array(info.filtered)).fill().map(_ => getValue());
             UI.Table.init(table).setColumn(2, column);
         });
 
-        dom.addEvent(tableSetValue, 'click', e => {
+        $.addEvent(tableSetValue, 'click', e => {
             UI.Table.init(table).setValue(0, 2, getValue());
         });
 
-        dom.triggerEvent(tableInit, 'click');
+        $.triggerEvent(tableInit, 'click');
     </script>
 </body>
 

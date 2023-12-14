@@ -1,14 +1,30 @@
 /**
+ * Get index of parent node.
+ * @param {number} index The index.
+ * @return {number} The parent index.
+ */
+const getParent = (index) => {
+    return ((index - 2) / 4 | 0) * 2;
+};
+
+/**
+ * Get index of child node.
+ * @param {number} index The index.
+ * @return {number} The child index.
+ */
+const getChild = (index) => {
+    return 2 * index + 2;
+};
+
+/**
  * Heap Class
  * Based on https://github.com/imaya/zlib.js/blob/develop/src/heap.js
  * @class
  */
-class Heap {
-
+export default class Heap {
     /**
      * New Heap constructor.
      * @param {number} [length] The size of the heap.
-     * @returns {Heap} A new Heap object.
      */
     constructor(length) {
         this._buffer = new Uint16Array(length * 2);
@@ -17,7 +33,7 @@ class Heap {
 
     /**
      * Pop the top value off the heap.
-     * @returns {object} The top value from the heap.
+     * @return {object} The top value from the heap.
      */
     pop() {
         const value = this._buffer[0];
@@ -29,7 +45,7 @@ class Heap {
 
         let parent = 0;
         while (true) {
-            let current = this.constructor._getChild(parent);
+            let current = getChild(parent);
 
             if (current >= this.length) {
                 break;
@@ -68,7 +84,7 @@ class Heap {
         this._buffer[this.length++] = index;
 
         while (current > 0) {
-            const parent = this.constructor._getParent(current);
+            const parent = getParent(current);
 
             if (this._buffer[current] > this._buffer[parent]) {
                 let swap = this._buffer[current];
@@ -85,23 +101,4 @@ class Heap {
             }
         }
     }
-
-    /**
-     * Get index of parent node.
-     * @param {number} index The index.
-     * @returns {number} The parent index.
-     */
-    static _getParent(index) {
-        return ((index - 2) / 4 | 0) * 2;
-    }
-
-    /**
-     * Get index of child node.
-     * @param {number} index The index.
-     * @returns {number} The child index.
-     */
-    static _getChild(index) {
-        return 2 * index + 2;
-    }
-
 }

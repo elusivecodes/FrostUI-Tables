@@ -1,6 +1,0 @@
-// Fade a color to a specified opacity (0-1).
-// @param $color
-// @param $amount
-@function fade($color, $amount) {
-    @return fade-out(fade-in($color, 1), 1 - $amount);
-}

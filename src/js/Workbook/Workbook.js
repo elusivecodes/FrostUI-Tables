@@ -1,13 +1,15 @@
+import { colName, escape, formatDate } from './helpers.js';
+import { templates } from './templates.js';
+import Zip from './../zip/zip.js';
+
 /**
  * Workbook Class
  * Based on https://github.com/shuchkin/simplexlsxgen/blob/master/src/SimpleXLSXGen.php
  * @class
  */
-class Workbook {
-
+export default class Workbook {
     /**
      * New Workbook constructor.
-     * @returns {Workbook} A new Workbook object.
      */
     constructor() {
         this._current = 0;
@@ -20,7 +22,6 @@ class Workbook {
      * Add a sheet to the Workbook.
      * @param {object} data The sheet data.
      * @param {string} [name] The name of the sheet.
-     * @returns {Workbook} The Workbook.
      */
     addSheet(data, name = null) {
         this._current++;
@@ -31,24 +32,22 @@ class Workbook {
 
         this._sheets.push({
             name,
-            data
+            data,
         });
-
-        return this;
     }
 
     /**
      * Create an xlsx file.
-     * @returns {Blob} The xlsx file.
+     * @return {Blob} The xlsx file.
      */
     create() {
         const zip = new Zip('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
-        for (let [filename, template] of Object.entries(this.constructor.templates)) {
+        for (let [filename, template] of Object.entries(templates)) {
             switch (filename) {
                 case '[Content_Types].xml':
                     const override = this._sheets.map((_, index) =>
-                        `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
+                        `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`,
                     ).join('');
 
                     template = template.replace('{sheets}', override);
@@ -57,7 +56,7 @@ class Workbook {
                     break;
                 case 'xl/_rels/workbook.xml.rels':
                     let relationships = this._sheets.map((_, index) =>
-                        `<Relationship Id="rId${index + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml\"/>\n`
+                        `<Relationship Id="rId${index + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml\"/>\n`,
                     ).join('');
 
                     relationships += `<Relationship Id="rId${this._sheets.length + 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>`;
@@ -68,7 +67,7 @@ class Workbook {
                     break;
                 case 'xl/workbook.xml':
                     const sheets = this._sheets.map((sheet, index) =>
-                        `<sheet name="${sheet.name}" sheetId="${index + 1}" state="visible" r:id="rId${index + 2}"/>`
+                        `<sheet name="${sheet.name}" sheetId="${index + 1}" state="visible" r:id="rId${index + 2}"/>`,
                     );
 
                     template = template.replace('{sheets}', sheets);
@@ -86,9 +85,9 @@ class Workbook {
                         this._sValues.push('No Data');
                     }
 
-                    const strings = this._sValues.map(string =>
-                        `<si><t>${string}</t></si>`
-                    ).join("\r\n");
+                    const strings = this._sValues.map((string) =>
+                        `<si><t>${string}</t></si>`,
+                    ).join('\r\n');
 
                     template = template.replaceAll('{cnt}', `${this._sValues.length}`);
                     template = template.replace('{strings}', strings);
@@ -117,7 +116,7 @@ class Workbook {
      * Convert a sheet object to an XML string.
      * @param {object} sheet The sheet.
      * @param {string} template The XML template.
-     * @returns {string} The XML string.
+     * @return {string} The XML string.
      */
     _sheetToXml(sheet, template) {
         const colLengths = {};
@@ -142,13 +141,13 @@ class Workbook {
                     continue;
                 }
 
-                const cName = this.constructor._colName(currentCol) + currentRow;
+                const cName = colName(currentCol) + currentRow;
 
                 value = `${value}`;
 
                 const length = value.length;
 
-                let cType, cStyle, cValue;
+                let cType; let cStyle; let cValue;
 
                 if (value === '0' || /^[-+]?[1-9]\d{0,14}$/.test(value)) {
                     cValue = value.trimStart('+');
@@ -167,27 +166,27 @@ class Workbook {
                     cStyle = 3; // 0.00%
                 } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
                     const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-                    cValue = this.constructor._date(match[1], match[2], match[3]);
+                    cValue = formatDate(match[1], match[2], match[3]);
                     cStyle = 4; // mm-dd-yy
                 } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                     const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-                    cValue = this.constructor._date(match[3], match[2], match[1]);
+                    cValue = formatDate(match[3], match[2], match[1]);
                     cStyle = 4; // mm-dd-yy
                 } else if (/\d{2}:\d{2}:\d{2}$/.test(value)) {
                     const match = value.match(/(\d{2}):(\d{2}):(\d{2})$/);
-                    cValue = this.constructor._date(0, 0, 0, match[1], match[2], match[3]);
+                    cValue = formatDate(0, 0, 0, match[1], match[2], match[3]);
                     cStyle = 5; // h:mm
                 } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
                     const match = value.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
-                    cValue = this.constructor._date(match[1], match[2], match[3], match[4], match[5], match[6]);
+                    cValue = formatDate(match[1], match[2], match[3], match[4], match[5], match[6]);
                     cStyle = 6; // m/d/yy h:mm
                 } else if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(value)) {
                     const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/);
-                    cValue = this.constructor._date(match[3], match[2], match[1], match[4], match[5], match[6]);
+                    cValue = formatDate(match[3], match[2], match[1], match[4], match[5], match[6]);
                     cStyle = 6; // m/d/yy h:mm
                 } else if (length > 160) {
                     cType = 'inlineStr';
-                    cValue = this.constructor._escape(value);
+                    cValue = escape(value);
                 } else {
                     if (/^[0-9+-.]+$/.test(value)) {
                         cStyle = 7; // align right
@@ -195,8 +194,8 @@ class Workbook {
 
                     cType = 's'; // shared string
 
-                    value = value.trimStart("\0");
-                    value = this.constructor._escape(value);
+                    value = value.trimStart('\0');
+                    value = escape(value);
 
                     const sKey = `~${value}`;
 
@@ -212,7 +211,7 @@ class Workbook {
                 colLengths[currentCol] = Math.max(length, colLengths[currentCol]);
 
                 const attributes = {
-                    r: cName
+                    r: cName,
                 };
 
                 if (cType) {
@@ -227,7 +226,7 @@ class Workbook {
                     attributes.s = cStyle;
                 }
 
-                row += `<c ${Object.keys(attributes).map(attr => `${attr}="${attributes[attr]}"`).join(' ')}>` +
+                row += `<c ${Object.keys(attributes).map((attr) => `${attr}="${attributes[attr]}"`).join(' ')}>` +
                     (
                         cType === 'inlineStr' ?
                             `<is><t>${cValue}</t></is>` :
@@ -258,13 +257,12 @@ class Workbook {
             cols.push(`<col min="${key}" max="${key}" width="${Math.min(max + 5, 60)}" />`);
         }
 
-        const ref = `A1:${this.constructor._colName(cols.length)}${rows.length}`;
+        const ref = `A1:${colName(cols.length)}${rows.length}`;
 
         template = template.replace('{ref}', ref);
-        template = template.replace('{cols}', cols.join("\r\n"));
-        template = template.replace('{rows}', rows.join("\r\n"));
+        template = template.replace('{cols}', cols.join('\r\n'));
+        template = template.replace('{rows}', rows.join('\r\n'));
 
         return template;
     }
-
 }
