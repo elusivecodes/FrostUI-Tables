@@ -123,4 +123,9 @@ export function _refreshResults() {
     } else {
         this._results = this._rowIndexes.map((rowIndex) => this._data[rowIndex]);
     }
+
+    if (this._options.paging) {
+        this._page = 1 + (this._offset / this._limit);
+        this._totalPages = Math.ceil(this._filtered / this._limit) || 1;
+    }
 };

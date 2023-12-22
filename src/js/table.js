@@ -157,7 +157,7 @@ export default class Table extends BaseComponent {
         this._original = null;
         this._container = null;
         this._loader = null;
-        this._thead = null;
+        this._theadRow = null;
         this._tbody = null;
         this._tfoot = null;
         this._infoContainer = null;

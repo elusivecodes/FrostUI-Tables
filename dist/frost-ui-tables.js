@@ -1949,7 +1949,7 @@
             this._original = null;
             this._container = null;
             this._loader = null;
-            this._thead = null;
+            this._theadRow = null;
             this._tbody = null;
             this._tfoot = null;
             this._infoContainer = null;
@@ -2385,14 +2385,14 @@
         }
 
         if (this._options.ordering) {
-            $.addEventDelegate(this._thead, 'click.ui.table', 'th', (e) => {
-                e.preventDefault();
-
+            const handleSort = (e) => {
                 const index = $.index(e.currentTarget);
 
                 if (!this._columns[index].orderable) {
                     return;
                 }
+
+                e.preventDefault();
 
                 const defaultDir = this._columns[index].dir;
                 let currentDir = null;
@@ -2435,6 +2435,18 @@
                 }
 
                 this.order(order);
+            };
+
+            $.addEventDelegate(this._theadRow, 'click.ui.table', 'th', handleSort);
+
+            $.addEventDelegate(this._theadRow, 'keydown.ui.table', 'th', (e) => {
+                switch (e.code) {
+                    case 'Enter':
+                    case 'NumpadEnter':
+                    case 'Space':
+                        handleSort(e);
+                        break;
+                }
             });
         }
 
@@ -2442,7 +2454,23 @@
             $.addEventDelegate(this._pagination, 'click.ui.table', '[data-ui-page]', (e) => {
                 e.preventDefault();
 
-                const page = $.getDataset(e.currentTarget, 'uiPage');
+                let page = $.getDataset(e.currentTarget, 'uiPage');
+
+                switch (page) {
+                    case 'first':
+                        page = 1;
+                        break;
+                    case 'prev':
+                        page = this._page - 1;
+                        break;
+                    case 'next':
+                        page = this._page + 1;
+                        break;
+                    case 'last':
+                        page = this._totalPages;
+                        break;
+                }
+
                 this.page(page);
             });
         }
@@ -2565,6 +2593,11 @@
             this._results = this._data;
         } else {
             this._results = this._rowIndexes.map((rowIndex) => this._data[rowIndex]);
+        }
+
+        if (this._options.paging) {
+            this._page = 1 + (this._offset / this._limit);
+            this._totalPages = Math.ceil(this._filtered / this._limit) || 1;
         }
     }
 
@@ -2706,8 +2739,11 @@
 
         $.addClass(this._node, this.constructor.classes.table);
 
-        this._thead = $.create('thead');
-        $.append(this._node, this._thead);
+        const thead = $.create('thead');
+        $.append(this._node, thead);
+
+        this._theadRow = $.create('tr');
+        $.append(thead, this._theadRow);
 
         this._tbody = $.create('tbody');
         $.append(this._node, this._tbody);
@@ -2782,75 +2818,101 @@
      * Render the table headings.
      */
     function _renderHeadings() {
-        $.empty(this._thead);
+        const children = $.children(this._theadRow);
 
-        const row = $.create('tr');
+        const headings = {};
 
+        for (const child of children) {
+            const index = $.getDataset(child, 'uiIndex');
+
+            if (!this._columns[index].visible) {
+                $.detach(child);
+            } else {
+                headings[index] = child;
+            }
+        }
+
+        let lastCell;
         for (const [index, heading] of this._headings.entries()) {
             if (!this._columns[index].visible) {
                 continue;
             }
 
-            const cell = $.create('th', {
-                class: this.constructor.classes.tableHeading,
-                html: heading.text,
-            });
+            let cell;
+            if (index in headings) {
+                cell = headings[index];
+            } else {
+                cell = $.create('th', {
+                    class: this.constructor.classes.tableHeading,
+                    html: heading.text,
+                    dataset: {
+                        uiIndex: index,
+                    },
+                });
 
-            if (heading.class) {
-                $.addClass(cell, heading.class);
+                if (heading.class) {
+                    $.addClass(cell, heading.class);
+                }
+
+                if (this._options.ordering && this._columns[index].orderable) {
+                    $.addClass(cell, this.constructor.classes.tableSort);
+                    $.setAttribute(cell, {
+                        'tabindex': 0,
+                        'aria-controls': $.getAttribute(this._node, 'id'),
+                    });
+                }
+
+                if (!lastCell) {
+                    $.append(this._theadRow, cell);
+                } else {
+                    $.insertAfter(cell, lastCell);
+                }
             }
 
-            $.append(row, cell);
+            lastCell = cell;
 
             if (!this._options.ordering || !this._columns[index].orderable) {
                 continue;
             }
 
-            const sortClasses = [this.constructor.classes.tableSort];
-            const attributes = {
-                'tabindex': 0,
-                'aria-controls': $.getAttribute(this._node, 'id'),
-            };
-
-            let nextDir = this._columns[index].dir;
-
+            let dir;
             for (const order of this._order) {
                 if (order[0] != index) {
                     continue;
                 }
 
-                switch (order[1]) {
-                    case 'asc':
-                        sortClasses.push(this.constructor.classes.tableSortAsc);
-                        attributes['aria-sort'] = 'ascending';
-                        break;
-                    case 'desc':
-                        sortClasses.push(this.constructor.classes.tableSortDesc);
-                        attributes['aria-sort'] = 'descending';
-                }
-
-                nextDir = order[1] === 'asc' ?
-                    'desc' :
-                    'asc';
+                dir = order[1];
                 break;
+            }
+
+            switch (dir) {
+                case 'asc':
+                    $.addClass(cell, this.constructor.classes.tableSortAsc);
+                    $.removeClass(cell, this.constructor.classes.tableSortDesc);
+                    $.setAttribute(cell, { 'aria-sort': 'ascending' });
+                    break;
+                case 'desc':
+                    $.addClass(cell, this.constructor.classes.tableSortDesc);
+                    $.removeClass(cell, this.constructor.classes.tableSortAsc);
+                    $.setAttribute(cell, { 'aria-sort': 'descending' });
+                    break;
+                default:
+                    $.removeClass(cell, [
+                        this.constructor.classes.tableSortAsc,
+                        this.constructor.classes.tableSortDesc,
+                    ]);
+                    $.removeAttribute(cell, 'aria-sort');
+                    break;
             }
 
             const text = $.getText(cell);
 
-            switch (nextDir) {
-                case 'asc':
-                    attributes['aria-label'] = `${text}${this._options.lang.aria.sortAscending}`;
-                    break;
-                case 'desc':
-                    attributes['aria-label'] = `${text}${this._options.lang.aria.sortDescending}`;
-                    break;
+            if (dir === 'asc' || (!dir && this._columns[index].dir === 'desc')) {
+                $.setAttribute(cell, { 'aria-label': `${text}${this._options.lang.aria.sortDescending}` });
+            } else {
+                $.setAttribute(cell, { 'aria-label': `${text}${this._options.lang.aria.sortAscending}` });
             }
-
-            $.addClass(cell, sortClasses);
-            $.setAttribute(cell, attributes);
         }
-
-        $.append(this._thead, row);
     }
     /**
      * Render the table info.
@@ -3021,24 +3083,11 @@
                 'role': 'link',
                 'aria-controls': $.getAttribute(this._node, 'id'),
             },
+            dataset: {
+                uiPage: options.page,
+            },
         });
         $.append(container, link);
-
-        if (options.disabled) {
-            $.addClass(container, this.constructor.classes.pageDisabled);
-            $.setAttribute(link, {
-                'aria-disabled': true,
-                'tabindex': -1,
-            });
-        }
-
-        if (options.active) {
-            $.addClass(container, this.constructor.classes.pageActive);
-        }
-
-        if (options.page) {
-            $.setDataset(link, { uiPage: options.page });
-        }
 
         return container;
     }
@@ -3046,65 +3095,113 @@
      * Render the pagination.
      */
     function _renderPagination() {
-        const totalPages = Math.ceil(this._filtered / this._limit) || 1;
-        const page = 1 + (this._offset / this._limit);
+        const setDisabled = (container, disabled) => {
+            const link = $.findOne(':scope > [data-ui-page]', container);
 
-        $.empty(this._pagination);
+            if (disabled) {
+                $.addClass(container, this.constructor.classes.pageDisabled);
+                $.setAttribute(link, {
+                    'aria-disabled': true,
+                    'tabindex': -1,
+                });
+            } else {
+                $.removeClass(container, this.constructor.classes.pageDisabled);
+                $.removeAttribute(link, 'aria-disabled');
+                $.removeAttribute(link, 'tabindex');
+            }
+        };
 
-        const first = this._renderPageItem({
-            text: this._options.lang.paginate.first,
-            icon: this._options.icons.first,
-            disabled: page == 1,
-            page: 1,
-        });
-        $.append(this._pagination, first);
+        const children = $.children(this._pagination);
 
-        const prev = this._renderPageItem({
-            text: this._options.lang.paginate.previous,
-            icon: this._options.icons.previous,
-            disabled: page == 1,
-            page: page > 1 ?
-                page - 1 :
-                null,
-        });
-        $.append(this._pagination, prev);
+        let firstPage;
+        let prevPage;
+        let nextPage;
+        let lastPage;
 
-        let startPage = Math.max(page - 5, 1);
-        let endPage = Math.min(page + 5, totalPages);
+        if (children.length) {
+            firstPage = children.shift();
+            prevPage = children.shift();
+            lastPage = children.pop();
+            nextPage = children.pop();
+        } else {
+            firstPage = this._renderPageItem({
+                text: this._options.lang.paginate.first,
+                icon: this._options.icons.first,
+                page: 'first',
+            });
+            $.append(this._pagination, firstPage);
+
+            prevPage = this._renderPageItem({
+                text: this._options.lang.paginate.previous,
+                icon: this._options.icons.previous,
+                page: 'prev',
+            });
+            $.append(this._pagination, prevPage);
+
+            nextPage = this._renderPageItem({
+                text: this._options.lang.paginate.next,
+                icon: this._options.icons.next,
+                page: 'next',
+            });
+            $.append(this._pagination, nextPage);
+
+            lastPage = this._renderPageItem({
+                text: this._options.lang.paginate.last,
+                icon: this._options.icons.last,
+                page: 'last',
+            });
+            $.append(this._pagination, lastPage);
+        }
+
+        setDisabled(firstPage, this._page == 1);
+        setDisabled(prevPage, this._page == 1);
+        setDisabled(nextPage, this._page == this._totalPages);
+        setDisabled(lastPage, this._page == this._totalPages);
+
+        let startPage = Math.max(this._page - 5, 1);
+        let endPage = Math.min(this._page + 5, this._totalPages);
 
         while (endPage - startPage > 4) {
-            if (page - startPage > endPage - page) {
+            if (this._page - startPage > endPage - this._page) {
                 startPage++;
             } else {
                 endPage--;
             }
         }
 
-        for (let current = startPage; current <= endPage; current++) {
-            const pageItem = this._renderPageItem({
-                page: current,
-                active: current == page,
-            });
-            $.append(this._pagination, pageItem);
+        const pageLinks = {};
+
+        for (const child of children) {
+            const link = $.findOne(':scope > [data-ui-page]', child);
+            const page = $.getDataset(link, 'uiPage');
+
+            if (page < startPage || page > endPage) {
+                $.detach(child);
+            } else {
+                pageLinks[page] = child;
+            }
         }
 
-        const next = this._renderPageItem({
-            text: this._options.lang.paginate.next,
-            icon: this._options.icons.next,
-            disabled: page == totalPages,
-            page: page < totalPages ?
-                page + 1 :
-                null,
-        });
-        $.append(this._pagination, next);
+        let lastLink = prevPage;
+        for (let current = startPage; current <= endPage; current++) {
+            let pageItem;
+            if (current in pageLinks) {
+                pageItem = pageLinks[current];
+            } else {
+                pageItem = this._renderPageItem({
+                    page: current,
+                });
+                $.insertAfter(pageItem, lastLink);
+            }
 
-        const last = this._renderPageItem({
-            text: this._options.lang.paginate.last,
-            icon: this._options.icons.last,
-            disabled: page == totalPages,
-            page: totalPages,
-        });
-        $.append(this._pagination, last);
+            if (current == this._page) {
+                $.addClass(pageItem, this.constructor.classes.pageActive);
+            } else {
+                $.removeClass(pageItem, this.constructor.classes.pageActive);
+            }
+
+            lastLink = pageItem;
+        }
     }
     /**
      * Render the pagination container in a container.

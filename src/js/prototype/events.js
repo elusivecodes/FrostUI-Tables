@@ -19,14 +19,14 @@ export function _events() {
     }
 
     if (this._options.ordering) {
-        $.addEventDelegate(this._thead, 'click.ui.table', 'th', (e) => {
-            e.preventDefault();
-
+        const handleSort = (e) => {
             const index = $.index(e.currentTarget);
 
             if (!this._columns[index].orderable) {
                 return;
             }
+
+            e.preventDefault();
 
             const defaultDir = this._columns[index].dir;
             let currentDir = null;
@@ -69,6 +69,18 @@ export function _events() {
             }
 
             this.order(order);
+        };
+
+        $.addEventDelegate(this._theadRow, 'click.ui.table', 'th', handleSort);
+
+        $.addEventDelegate(this._theadRow, 'keydown.ui.table', 'th', (e) => {
+            switch (e.code) {
+                case 'Enter':
+                case 'NumpadEnter':
+                case 'Space':
+                    handleSort(e);
+                    break;
+            }
         });
     }
 
@@ -76,7 +88,23 @@ export function _events() {
         $.addEventDelegate(this._pagination, 'click.ui.table', '[data-ui-page]', (e) => {
             e.preventDefault();
 
-            const page = $.getDataset(e.currentTarget, 'uiPage');
+            let page = $.getDataset(e.currentTarget, 'uiPage');
+
+            switch (page) {
+                case 'first':
+                    page = 1;
+                    break;
+                case 'prev':
+                    page = this._page - 1;
+                    break;
+                case 'next':
+                    page = this._page + 1;
+                    break;
+                case 'last':
+                    page = this._totalPages;
+                    break;
+            }
+
             this.page(page);
         });
     }
