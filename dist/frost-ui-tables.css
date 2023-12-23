@@ -3,6 +3,10 @@
   padding-right: 1.7rem !important;
   cursor: pointer;
 }
+.table-sort:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 9999px rgba(var(--ui-primary-rgb), 0.2);
+}
 .table-sort::before, .table-sort::after {
   position: absolute;
   display: block;

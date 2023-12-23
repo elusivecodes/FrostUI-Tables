@@ -5,6 +5,11 @@
     padding-right: ($table-sort-right * 2) + ($table-sort-size * 2) !important;
     cursor: pointer;
 
+    &:focus-visible {
+        outline: 0;
+        box-shadow: $table-sort-focus-box-shadow
+    }
+
     &::before,
     &::after {
         position: absolute;
