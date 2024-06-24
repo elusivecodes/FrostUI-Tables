@@ -1,6 +1,6 @@
 {
     "name": "@fr0st/ui-tables",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "description": "FrostUI-Tables is a free, open-source Tables component for Javascript.",
     "keywords": [
         "ui",
@@ -18,20 +18,20 @@
     "type": "module",
     "files": [
         "dist",
-        "/LICENSE",
-        "/README.md",
+        "LICENSE",
+        "README.md",
         "src"
     ],
     "scripts": {
         "build": "npm run css && npm run js",
         "css": "npm run css-compile && npm run css-prefix && npm run css-minify",
         "css-compile": "sass --style expanded --source-map --embed-sources --no-error-css src/scss/tables.scss dist/frost-ui-tables.css",
-        "css-lint": "stylelint \"src/scss/**/*.scss\" --fix",
+        "css-lint": "stylelint \"src/scss/**/*.scss\"",
         "css-minify": "cleancss -O1 --format breakWith=lf --with-rebase --source-map --source-map-inline-sources --output dist/frost-ui-tables.min.css dist/frost-ui-tables.css",
         "css-prefix": "postcss --replace dist/frost-ui-tables.css",
         "js": "npm run js-compile && npm run js-minify",
         "js-compile": "rollup --config",
-        "js-lint": "eslint --ext .js .",
+        "js-lint": "eslint",
         "js-minify": "terser --compress passes=2 --mangle --source-map \"content=dist/frost-ui-tables.js.map\" --output dist/frost-ui-tables.min.js dist/frost-ui-tables.js",
         "sass-unused": "fusv src/scss"
     },
@@ -43,18 +43,18 @@
     "license": "MIT",
     "private": false,
     "devDependencies": {
+        "@fr0st/eslint-config": "^1.0.2",
+        "@fr0st/stylelint-config": "^1.0.6",
         "@rollup/plugin-node-resolve": "^15.2.3",
-        "autoprefixer": "^10.4.16",
+        "autoprefixer": "^10.4.19",
         "clean-css-cli": "^5.6.3",
-        "eslint": "^8.56.0",
-        "eslint-config-google": "^0.14.0",
-        "find-unused-sass-variables": "^5.0.0",
-        "postcss": "^8.4.32",
+        "eslint": "^9.5.0",
+        "find-unused-sass-variables": "^6.0.0",
+        "postcss": "^8.4.38",
         "postcss-cli": "^11.0.0",
-        "rollup": "^4.9.1",
-        "sass": "^1.69.5",
-        "stylelint": "^15.11.0",
-        "stylelint-config-twbs-bootstrap": "^12.0.0",
-        "terser": "^5.26.0"
+        "rollup": "^4.18.0",
+        "sass": "^1.77.6",
+        "stylelint": "^16.6.1",
+        "terser": "^5.31.1"
     }
 }
